@@ -1,0 +1,721 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		85E7BBB22E651F4100656163 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = 85E7BBB12E651F4100656163 /* Vapor */; };
+		85E7BBBF2E651F7C00656163 /* NIOSSL in Frameworks */ = {isa = PBXBuildFile; productRef = 85E7BBBE2E651F7C00656163 /* NIOSSL */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		8500C3552E641CBC004826F2 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85094D7B2E60A7D300803F13 /* ZipArchiveExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZipArchiveExample.xcodeproj; sourceTree = "<group>"; };
+		85094DB22E60A7D300803F13 /* ZipArchive.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZipArchive.xcodeproj; sourceTree = "<group>"; };
+		851FD95F2E578774002136BA /* APP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = APP.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		853205E22E6485F00035A85B /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		8532C3592E649E100035A85B /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		855F2DDC2E642138007D244F /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		855F48FA2E6475E2007D244F /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		855F64102E647DE4007D244F /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		8560CB3C2E649ECD00C7FC7A /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		8564A9F02E6533E8002D9EBE /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		8568B3522E65A9E9009E2518 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		8568B7F82E65B2BA009E2518 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		8568BC9C2E65B32C009E2518 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		856960EE2E60A59F00B87241 /* Kingfisher-Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "Kingfisher-Demo.xcodeproj"; sourceTree = "<group>"; };
+		8569614A2E60A59F00B87241 /* Kingfisher.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Kingfisher.xcodeproj; sourceTree = "<group>"; };
+		85A57C2D2E6401B5007635F2 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85A8DFB82E640B7A000681A4 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85DE2D2C2E65C36C00A070C1 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85DE30B92E65C91600A070C1 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85DE35712E65C9DE00A070C1 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85E21E712E6414F2006918DB /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85E7B6E02E64F6A200656163 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+		85E7BB262E651F1D00656163 /* StosVPN.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = StosVPN.xcodeproj; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		851FD9612E578774002136BA /* APP */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = APP;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		851FD95C2E578774002136BA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				85E7BBB22E651F4100656163 /* Vapor in Frameworks */,
+				85E7BBBF2E651F7C00656163 /* NIOSSL in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		8500C3742E641CBC004826F2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85094DB32E60A7D300803F13 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85094DB52E60A7D300803F13 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		851FD9562E578774002136BA = {
+			isa = PBXGroup;
+			children = (
+				851FD9612E578774002136BA /* APP */,
+				851FD9602E578774002136BA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		851FD9602E578774002136BA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				851FD95F2E578774002136BA /* APP.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		853206012E6485F10035A85B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8532C3782E649E100035A85B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		855F2DFC2E642138007D244F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		855F49122E6475E2007D244F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		855F642F2E647DE5007D244F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8560CB5B2E649ECD00C7FC7A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8564AA102E6533E8002D9EBE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8568B3712E65A9E9009E2518 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8568B8182E65B2BA009E2518 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8568BCBB2E65B32C009E2518 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		856961512E60A59F00B87241 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		856961532E60A59F00B87241 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85A57C332E6401B5007635F2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85A8DFD82E640B7A000681A4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85DE2D4C2E65C36C00A070C1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85DE30DA2E65C91600A070C1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85DE35912E65C9DE00A070C1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85E21E902E6414F2006918DB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85E7B6E22E64F6A200656163 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		85E7BB462E651F1D00656163 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		851FD95E2E578774002136BA /* APP */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 851FD96A2E578775002136BA /* Build configuration list for PBXNativeTarget "APP" */;
+			buildPhases = (
+				851FD95B2E578774002136BA /* Sources */,
+				851FD95C2E578774002136BA /* Frameworks */,
+				851FD95D2E578774002136BA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				851FD9612E578774002136BA /* APP */,
+			);
+			name = APP;
+			packageProductDependencies = (
+				85E7BBB12E651F4100656163 /* Vapor */,
+				85E7BBBE2E651F7C00656163 /* NIOSSL */,
+			);
+			productName = APP;
+			productReference = 851FD95F2E578774002136BA /* APP.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		851FD9572E578774002136BA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					851FD95E2E578774002136BA = {
+						CreatedOnToolsVersion = 16.4;
+						LastSwiftMigration = 1640;
+					};
+				};
+			};
+			buildConfigurationList = 851FD95A2E578774002136BA /* Build configuration list for PBXProject "APP" */;
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				"zh-Hans",
+				en,
+				es,
+				it,
+			);
+			mainGroup = 851FD9562E578774002136BA;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				85E7BBB02E651F4100656163 /* XCRemoteSwiftPackageReference "vapor" */,
+				85E7BBBD2E651F7C00656163 /* XCRemoteSwiftPackageReference "swift-nio-ssl" */,
+				85E7BBC02E651F9300656163 /* XCRemoteSwiftPackageReference "swift-nio-extras" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 851FD9602E578774002136BA /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 856961532E60A59F00B87241 /* Products */;
+					ProjectRef = 856960EE2E60A59F00B87241 /* Kingfisher-Demo.xcodeproj */;
+				},
+				{
+					ProductGroup = 856961512E60A59F00B87241 /* Products */;
+					ProjectRef = 8569614A2E60A59F00B87241 /* Kingfisher.xcodeproj */;
+				},
+				{
+					ProductGroup = 855F642F2E647DE5007D244F /* Products */;
+					ProjectRef = 855F64102E647DE4007D244F /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 853206012E6485F10035A85B /* Products */;
+					ProjectRef = 853205E22E6485F00035A85B /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85E7B6E22E64F6A200656163 /* Products */;
+					ProjectRef = 85E7B6E02E64F6A200656163 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85E7BB462E651F1D00656163 /* Products */;
+					ProjectRef = 85E7BB262E651F1D00656163 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 8568B3712E65A9E9009E2518 /* Products */;
+					ProjectRef = 8568B3522E65A9E9009E2518 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 8568B8182E65B2BA009E2518 /* Products */;
+					ProjectRef = 8568B7F82E65B2BA009E2518 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 855F2DFC2E642138007D244F /* Products */;
+					ProjectRef = 855F2DDC2E642138007D244F /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 8560CB5B2E649ECD00C7FC7A /* Products */;
+					ProjectRef = 8560CB3C2E649ECD00C7FC7A /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85DE2D4C2E65C36C00A070C1 /* Products */;
+					ProjectRef = 85DE2D2C2E65C36C00A070C1 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85A57C332E6401B5007635F2 /* Products */;
+					ProjectRef = 85A57C2D2E6401B5007635F2 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 8532C3782E649E100035A85B /* Products */;
+					ProjectRef = 8532C3592E649E100035A85B /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85DE30DA2E65C91600A070C1 /* Products */;
+					ProjectRef = 85DE30B92E65C91600A070C1 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 8568BCBB2E65B32C009E2518 /* Products */;
+					ProjectRef = 8568BC9C2E65B32C009E2518 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 8500C3742E641CBC004826F2 /* Products */;
+					ProjectRef = 8500C3552E641CBC004826F2 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 8564AA102E6533E8002D9EBE /* Products */;
+					ProjectRef = 8564A9F02E6533E8002D9EBE /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85E21E902E6414F2006918DB /* Products */;
+					ProjectRef = 85E21E712E6414F2006918DB /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85A8DFD82E640B7A000681A4 /* Products */;
+					ProjectRef = 85A8DFB82E640B7A000681A4 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85DE35912E65C9DE00A070C1 /* Products */;
+					ProjectRef = 85DE35712E65C9DE00A070C1 /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 855F49122E6475E2007D244F /* Products */;
+					ProjectRef = 855F48FA2E6475E2007D244F /* StosVPN.xcodeproj */;
+				},
+				{
+					ProductGroup = 85094DB52E60A7D300803F13 /* Products */;
+					ProjectRef = 85094DB22E60A7D300803F13 /* ZipArchive.xcodeproj */;
+				},
+				{
+					ProductGroup = 85094DB32E60A7D300803F13 /* Products */;
+					ProjectRef = 85094D7B2E60A7D300803F13 /* ZipArchiveExample.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				851FD95E2E578774002136BA /* APP */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		851FD95D2E578774002136BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		851FD95B2E578774002136BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		851FD9682E578775002136BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Osize";
+			};
+			name = Debug;
+		};
+		851FD9692E578775002136BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		851FD96B2E578775002136BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = APP/main/APP.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TWLNU7NXWY;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/APP/Frameworks/IPA",
+					"$(PROJECT_DIR)/APP/Frameworks/Kingfisher",
+					"$(PROJECT_DIR)/APP/Frameworks/ZipArchive",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsArbitraryLoads = YES;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
+				INFOPLIST_KEY_NSBonjourServices = "_http._tcp _https._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "此应用需要访问本地网络来提供IPA安装服务";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/APP/IPA/方法2-增强OTA安装/ChOma/SwiftBridge",
+					"$(PROJECT_DIR)/APP/IPA/方法2-增强OTA安装/ChOma/output/ios/lib",
+					"$(PROJECT_DIR)/APP/IPA/方法2-增强OTA安装/ChOma/external/ios",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/SwiftBridge",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/external/ios",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/output/ios/lib",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/output/lib",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/output/simulator/lib",
+				);
+				MARKETING_VERSION = 1.1;
+				OTHER_LDFLAGS = "-larchive";
+				PRODUCT_BUNDLE_IDENTIFIER = com.pxx917144686.APP;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		851FD96C2E578775002136BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = APP/main/APP.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TWLNU7NXWY;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsArbitraryLoads = YES;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
+				INFOPLIST_KEY_NSBonjourServices = "_http._tcp _https._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "此应用需要访问本地网络来提供IPA安装服务";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/APP/IPA/方法2-增强OTA安装/ChOma/SwiftBridge",
+					"$(PROJECT_DIR)/APP/IPA/方法2-增强OTA安装/ChOma/output/ios/lib",
+					"$(PROJECT_DIR)/APP/IPA/方法2-增强OTA安装/ChOma/external/ios",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/SwiftBridge",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/external/ios",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/output/ios/lib",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/output/lib",
+					"$(PROJECT_DIR)/APP/IPA/方法3-覆盖安装/ChOma/output/simulator/lib",
+				);
+				MARKETING_VERSION = 1.1;
+				OTHER_LDFLAGS = "-larchive";
+				PRODUCT_BUNDLE_IDENTIFIER = com.pxx917144686.APP;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		851FD95A2E578774002136BA /* Build configuration list for PBXProject "APP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				851FD9682E578775002136BA /* Debug */,
+				851FD9692E578775002136BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		851FD96A2E578775002136BA /* Build configuration list for PBXNativeTarget "APP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				851FD96B2E578775002136BA /* Debug */,
+				851FD96C2E578775002136BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		85E7BBB02E651F4100656163 /* XCRemoteSwiftPackageReference "vapor" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vapor/vapor.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.115.1;
+			};
+		};
+		85E7BBBD2E651F7C00656163 /* XCRemoteSwiftPackageReference "swift-nio-ssl" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-nio-ssl.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.33.0;
+			};
+		};
+		85E7BBC02E651F9300656163 /* XCRemoteSwiftPackageReference "swift-nio-extras" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-nio-extras.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.29.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		85E7BBB12E651F4100656163 /* Vapor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 85E7BBB02E651F4100656163 /* XCRemoteSwiftPackageReference "vapor" */;
+			productName = Vapor;
+		};
+		85E7BBBE2E651F7C00656163 /* NIOSSL */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 85E7BBBD2E651F7C00656163 /* XCRemoteSwiftPackageReference "swift-nio-ssl" */;
+			productName = NIOSSL;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 851FD9572E578774002136BA /* Project object */;
+}
