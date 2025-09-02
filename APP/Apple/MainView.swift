@@ -9,6 +9,10 @@ import SwiftUI
 import UIKit
 #endif
 
+// 确保能访问设备适配器
+// 注意：DeviceAdapter和DeviceType定义在iOSCompatibilityHelper.swift中
+// 注意：ModernDarkColors定义在Colors.swift中
+
 struct MainView: View {
     @StateObject private var themeManager = ThemeManager.shared
     @State private var selectedTab = 2 // 默认选中管理页面
@@ -17,6 +21,7 @@ struct MainView: View {
     @State private var liquidOffset: CGFloat = 0 // Liquid Glass 液体偏移
     @State private var scrollOffset: CGFloat = 0 // 滚动偏移，用于标签栏最小化
     @State private var isTabBarMinimized = false // 标签栏是否最小化
+    
     var body: some View {
         ZStack {
             // 主内容区域
@@ -65,6 +70,7 @@ struct MainView: View {
                         }
                     }
             )
+            
             // 铺满底部栏的分段式设计
             VStack {
                 Spacer()
@@ -78,10 +84,13 @@ struct MainView: View {
                 )
                 .animation(.easeInOut(duration: 0.3), value: isTabBarMinimized)
             }
-            .ignoresSafeArea(.container, edges: .bottom)
+            .ignoresSafeArea(.container, edges: .bottom) // 使用标准的ignoresSafeArea
         }
+        .background(themeManager.backgroundColor)
+        .ignoresSafeArea()
     }
 }
+
 // MARK: - 现代化分段控制器底部栏
 struct ModernSegmentedTabBar: View {
     @Binding var selectedTab: Int
@@ -90,11 +99,24 @@ struct ModernSegmentedTabBar: View {
     @Binding var liquidOffset: CGFloat
     @Binding var isMinimized: Bool
     @EnvironmentObject var themeManager: ThemeManager
+    
     private let tabItems = [
         (title: "账户", icon: "person.crop.circle.fill", color: Color.blue),
         (title: "搜索", icon: "magnifyingglass", color: Color.green),
         (title: "管理", icon: "arrow.down.circle.fill", color: Color.orange)
     ]
+    
+    // 简化标签栏高度设置，避免设备类型检测问题
+    private var tabBarHeight: CGFloat {
+        #if canImport(UIKit)
+        // 根据安全区域动态调整高度
+        let safeAreaBottom = UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0
+        return 80 + safeAreaBottom
+        #else
+        return 80
+        #endif
+    }
+    
     var body: some View {
         // 铺满底部栏的分段控制器容器
         HStack(spacing: 0) {
@@ -117,16 +139,37 @@ struct ModernSegmentedTabBar: View {
             }
         }
         .background(
-            // 铺满底部栏的背景层
+            // 铺满底部栏的背景层 - 适配深色模式
             Rectangle()
-                .fill(themeManager.backgroundColor) // 使用主题背景色，与其他界面保持一致
+                .fill(themeManager.selectedTheme == .dark ? 
+                     ModernDarkColors.surfacePrimary : 
+                     Color.white)
+        )
+        .overlay(
+            // 顶部边框 - 深色模式下更明显
+            Rectangle()
+                .fill(themeManager.selectedTheme == .dark ? 
+                     ModernDarkColors.borderPrimary : 
+                     Color.gray.opacity(0.2))
+                .frame(height: 0.5)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        )
+        .shadow(
+            color: themeManager.selectedTheme == .dark ? 
+                ModernDarkColors.shadowColor : 
+                Color.black.opacity(0.1),
+            radius: themeManager.selectedTheme == .dark ? 8 : 4,
+            x: 0,
+            y: -2
         )
         .frame(maxWidth: .infinity) // 铺满宽度
-        .frame(height: 80) // 增加高度
+        .frame(height: tabBarHeight) // 动态调整高度
         .scaleEffect(isMinimized ? 0.95 : 1.0)
         .opacity(isMinimized ? 0.9 : 1.0)
+        .clipped() // 确保内容不溢出
     }
 }
+
 // MARK: - 现代化分段控制器项目
 struct ModernSegmentedTabItem: View {
     let title: String
@@ -139,7 +182,9 @@ struct ModernSegmentedTabItem: View {
     let tabIndex: Int
     let isMinimized: Bool
     let action: () -> Void
+    
     @EnvironmentObject var themeManager: ThemeManager
+    
     // 分段控制器进度计算
     private var segmentProgress: CGFloat {
         guard isDragging else { return 0 }
@@ -151,6 +196,7 @@ struct ModernSegmentedTabItem: View {
         let tabProgress = CGFloat(tabIndex) + normalizedOffset
         return max(0, min(1, 1 - abs(tabProgress - CGFloat(tabIndex))))
     }
+    
     // 现代化变形效果
     private var modernScale: CGFloat {
         if isSelected {
@@ -159,6 +205,7 @@ struct ModernSegmentedTabItem: View {
             return isDragging ? 0.9 + segmentProgress * 0.1 : 0.9
         }
     }
+    
     // 现代化透明度
     private var modernOpacity: Double {
         if isSelected {
@@ -167,6 +214,41 @@ struct ModernSegmentedTabItem: View {
             return isDragging ? 0.6 + segmentProgress * 0.4 : 0.6
         }
     }
+    
+    // 简化图标大小设置，避免设备类型检测问题
+    private var iconSize: CGFloat {
+        #if canImport(UIKit)
+        // 根据屏幕尺寸动态调整
+        let screenHeight = UIScreen.main.bounds.height
+        if screenHeight <= 667 { // iPhone 8及以下
+            return 20
+        } else if screenHeight >= 852 { // iPhone 14 Pro及以上
+            return 24
+        } else {
+            return 22
+        }
+        #else
+        return 22
+        #endif
+    }
+    
+    // 简化字体大小设置，避免设备类型检测问题
+    private var titleFontSize: CGFloat {
+        #if canImport(UIKit)
+        // 根据屏幕尺寸动态调整
+        let screenHeight = UIScreen.main.bounds.height
+        if screenHeight <= 667 { // iPhone 8及以下
+            return 11
+        } else if screenHeight >= 852 { // iPhone 14 Pro及以上
+            return 13
+        } else {
+            return 12
+        }
+        #else
+        return 12
+        #endif
+    }
+    
     var body: some View {
         Button(action: action) {
             ZStack {
@@ -187,8 +269,8 @@ struct ModernSegmentedTabItem: View {
                         .background(
                             Rectangle()
                                 .fill(themeManager.selectedTheme == .dark ? 
-                                     ModernDarkColors.surfaceSecondary.opacity(0.8) : 
-                                     themeManager.backgroundColor.opacity(0.8))
+                                     ModernDarkColors.surfaceSecondary.opacity(0.9) : 
+                                     Color.white.opacity(0.9))
                                 .blur(radius: 8)
                         )
                         .overlay(
@@ -211,6 +293,7 @@ struct ModernSegmentedTabItem: View {
                         .scaleEffect(modernScale)
                         .animation(.easeInOut(duration: 0.3), value: isSelected)
                 }
+                
                 // 铺满底部栏的内容层
                 VStack(spacing: 4) {
                     // 图标
@@ -233,17 +316,23 @@ struct ModernSegmentedTabItem: View {
                                 .frame(width: 36, height: 36)
                                 .scaleEffect(modernScale)
                         }
+                        
                         // 主图标
                         Image(systemName: icon)
-                            .font(.system(size: 22, weight: isSelected ? .bold : .semibold))
-                            .foregroundColor(isSelected ? color : color.opacity(0.7))
+                            .font(.system(size: iconSize, weight: isSelected ? .bold : .semibold))
+                            .foregroundColor(isSelected ? color : (themeManager.selectedTheme == .dark ? 
+                                 color.opacity(0.8) : 
+                                 color.opacity(0.7)))
                             .scaleEffect(modernScale)
                             .opacity(modernOpacity)
                     }
+                    
                     // 文字
                     Text(title)
-                        .font(.system(size: 12, weight: isSelected ? .bold : .medium))
-                        .foregroundColor(isSelected ? color : color.opacity(0.7))
+                        .font(.system(size: titleFontSize, weight: isSelected ? .bold : .medium))
+                        .foregroundColor(isSelected ? color : (themeManager.selectedTheme == .dark ? 
+                             color.opacity(0.8) : 
+                             color.opacity(0.7)))
                         .opacity(modernOpacity)
                 }
                 .frame(maxWidth: .infinity)
@@ -251,5 +340,6 @@ struct ModernSegmentedTabItem: View {
             }
         }
         .buttonStyle(PlainButtonStyle())
+        .iOSCompatibility()
     }
 }

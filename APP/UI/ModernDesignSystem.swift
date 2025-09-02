@@ -1,11 +1,11 @@
 //
 //  ModernDesignSystem.swift
 //  APP
-//
 //  由 pxx917144686 UI 系统创建于 2025.08.19
-//  统一设计系统 - 提供一致的 UI 组件和样式
+//  统一设计 - 提供一致的 UI 组件和样式
 //
 import SwiftUI
+
 // MARK: - 设计系统文档
 /*
  此文件包含 APP 项目的统一设计系统。
@@ -20,6 +20,7 @@ import SwiftUI
  - 使用预定义的颜色、字体和组件
  - 遵循既定的设计模式
 */
+
 // MARK: - 颜色系统（Microsoft Fluent + Google Material）
 extension Color {
     // Microsoft Fluent 颜色
@@ -27,6 +28,7 @@ extension Color {
     static let fluentPurple = Color(red: 0.41, green: 0.18, blue: 0.86)
     static let fluentTeal = Color(red: 0.0, green: 0.69, blue: 0.69)
     static let fluentOrange = Color(red: 1.0, green: 0.55, blue: 0.0)
+    
     // Google Material 颜色
     static let materialBlue = Color(red: 0.12, green: 0.47, blue: 1.0)
     static let materialGreen = Color(red: 0.0, green: 0.76, blue: 0.35)
@@ -42,14 +44,17 @@ extension Color {
     static let materialBrown = Color(red: 0.47, green: 0.33, blue: 0.28)
     static let materialDeepPurple = Color(red: 0.40, green: 0.23, blue: 0.72)
     static let materialDeepOrange = Color(red: 1.0, green: 0.34, blue: 0.13)
+    
     // 表面颜色 - 为简化使用自定义颜色
     static let surfacePrimary = Color(red: 1.0, green: 1.0, blue: 1.0)
     static let surfaceSecondary = Color(red: 0.95, green: 0.95, blue: 0.97)
     static let surfaceTertiary = Color(red: 0.93, green: 0.93, blue: 0.95)
     static let cardBackground = Color(red: 0.98, green: 0.98, blue: 1.0)
+    
     // 强调色
     static let primaryAccent = fluentBlue
     static let secondaryAccent = materialGreen
+    
     // 主题感知颜色
     static var themeAwarePrimaryAccent: Color {
         return ThemeManager.shared.accentColor
@@ -61,29 +66,35 @@ extension Color {
         return ThemeManager.shared.cardBackgroundColor
     }
 }
+
 // MARK: - 排版系统
 extension Font {
     // 展示型排版（大标题）
     static let displayLarge = Font.system(size: 57, weight: .regular, design: .rounded)
     static let displayMedium = Font.system(size: 45, weight: .regular, design: .rounded)
     static let displaySmall = Font.system(size: 36, weight: .regular, design: .rounded)
+    
     // 标题型排版
     static let headlineLarge = Font.system(size: 32, weight: .medium, design: .rounded)
     static let headlineMedium = Font.system(size: 28, weight: .medium, design: .rounded)
     static let headlineSmall = Font.system(size: 24, weight: .medium, design: .rounded)
+    
     // 小标题排版
     static let titleLarge = Font.system(size: 22, weight: .semibold, design: .rounded)
     static let titleMedium = Font.system(size: 16, weight: .semibold, design: .rounded)
     static let titleSmall = Font.system(size: 14, weight: .semibold, design: .rounded)
+    
     // 正文排版
     static let bodyLarge = Font.system(size: 16, weight: .regular, design: .default)
     static let bodyMedium = Font.system(size: 14, weight: .regular, design: .default)
     static let bodySmall = Font.system(size: 12, weight: .regular, design: .default)
+    
     // 标签排版
     static let labelLarge = Font.system(size: 14, weight: .medium, design: .default)
     static let labelMedium = Font.system(size: 12, weight: .medium, design: .default)
     static let labelSmall = Font.system(size: 11, weight: .medium, design: .default)
 }
+
 // MARK: - 间距系统
 enum Spacing {
     static let xxs: CGFloat = 2
@@ -95,6 +106,7 @@ enum Spacing {
     static let xxl: CGFloat = 48
     static let xxxl: CGFloat = 64
 }
+
 // MARK: - 圆角系统
 enum CornerRadius {
     static let xs: CGFloat = 4
@@ -105,6 +117,7 @@ enum CornerRadius {
     static let xxl: CGFloat = 32
     static let round: CGFloat = 50
 }
+
 // MARK: - 阴影系统
 struct ShadowStyle {
     let color: Color

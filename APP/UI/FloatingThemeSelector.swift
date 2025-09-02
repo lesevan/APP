@@ -5,9 +5,11 @@
 //  Created by pxx917144686 on 2025/08/29.
 //
 import SwiftUI
+
 struct FloatingThemeSelector: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Binding var isPresented: Bool
+    
     var body: some View {
         ZStack {
             // 背景遮罩
@@ -20,6 +22,7 @@ struct FloatingThemeSelector: View {
                         }
                     }
             }
+            
             // 悬浮窗内容
             if isPresented {
                 VStack(spacing: 0) {
@@ -53,17 +56,48 @@ struct FloatingThemeSelector: View {
                         }
                         .padding(.horizontal, Spacing.lg)
                     }
-                    .padding(.bottom, 100) // 上移窗口，避免被底部栏遮挡
+                    .padding(.bottom, DeviceAdapter.shared.safeAreaBottom + 80) // 动态适配底部安全区域
                 }
             }
         }
     }
 }
+
 // 悬浮窗主题选项组件
 struct FloatingThemeOption: View {
     let mode: ThemeMode
     let isSelected: Bool
     let action: () -> Void
+    
+    // 根据设备类型调整尺寸
+    private var cardSize: CGSize {
+        let deviceType = DeviceAdapter.shared.deviceType
+        switch deviceType {
+        case .iPhone8, .iPhone8Plus:
+            return CGSize(width: 80, height: 100)
+        case .iPhoneX, .iPhone12, .iPhone13:
+            return CGSize(width: 90, height: 110)
+        case .iPhone14Pro, .iPhone14ProMax:
+            return CGSize(width: 100, height: 120)
+        default:
+            return CGSize(width: 100, height: 120)
+        }
+    }
+    
+    private var fontSize: CGFloat {
+        let deviceType = DeviceAdapter.shared.deviceType
+        switch deviceType {
+        case .iPhone8, .iPhone8Plus:
+            return 10
+        case .iPhoneX, .iPhone12, .iPhone13:
+            return 11
+        case .iPhone14Pro, .iPhone14ProMax:
+            return 12
+        default:
+            return 12
+        }
+    }
+    
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.md) {
@@ -71,91 +105,95 @@ struct FloatingThemeOption: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(themeBackgroundColor)
-                        .frame(width: 100, height: 120)
+                        .frame(width: cardSize.width, height: cardSize.height)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
                                 .stroke(isSelected ? ThemeManager.shared.accentColor : Color.clear, lineWidth: 4)
                         )
                         .shadow(color: isSelected ? ThemeManager.shared.accentColor.opacity(0.4) : Color.black.opacity(0.15), radius: isSelected ? 12 : 6, x: 0, y: 4)
+                    
                     // APP搜索界面预览
                     VStack(spacing: 8) {
                         // 状态栏
                         HStack {
                             Text("9:41")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: fontSize - 2, weight: .medium))
                                 .foregroundColor(themeTextColor)
                             Spacer()
                             HStack(spacing: 3) {
                                 Image(systemName: "wifi")
-                                    .font(.system(size: 10))
+                                    .font(.system(size: fontSize - 2))
                                     .foregroundColor(themeTextColor)
                                 Image(systemName: "battery.100")
-                                    .font(.system(size: 10))
+                                    .font(.system(size: fontSize - 2))
                                     .foregroundColor(themeTextColor)
                             }
                         }
-                        .frame(width: 75)
+                        .frame(width: cardSize.width * 0.75)
                         .padding(.top, 6)
+                        
                         // 搜索栏
                         RoundedRectangle(cornerRadius: 10)
                             .fill(themeSearchBarColor)
-                            .frame(width: 75, height: 16)
+                            .frame(width: cardSize.width * 0.75, height: fontSize + 6)
                             .overlay(
                                 HStack(spacing: 4) {
                                     Image(systemName: "magnifyingglass")
-                                        .font(.system(size: 9))
+                                        .font(.system(size: fontSize - 3))
                                         .foregroundColor(themeSecondaryColor)
                                     Text("搜索")
-                                        .font(.system(size: 9))
+                                        .font(.system(size: fontSize - 3))
                                         .foregroundColor(themeSecondaryColor)
                                     Spacer()
                                 }
                                 .padding(.horizontal, 8)
                             )
+                        
                         // 搜索结果网格 - 彩色APP图标
                         VStack(spacing: 4) {
                             HStack(spacing: 4) {
                                 // APP图标1 - 蓝色
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.blue)
-                                    .frame(width: 15, height: 15)
+                                    .frame(width: fontSize + 3, height: fontSize + 3)
                                 // APP图标2 - 绿色
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.green)
-                                    .frame(width: 15, height: 15)
+                                    .frame(width: fontSize + 3, height: fontSize + 3)
                                 // APP图标3 - 橙色
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.orange)
-                                    .frame(width: 15, height: 15)
+                                    .frame(width: fontSize + 3, height: fontSize + 3)
                             }
                             HStack(spacing: 4) {
                                 // APP图标4 - 紫色
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.purple)
-                                    .frame(width: 15, height: 15)
+                                    .frame(width: fontSize + 3, height: fontSize + 3)
                                 // APP图标5 - 红色
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.red)
-                                    .frame(width: 15, height: 15)
+                                    .frame(width: fontSize + 3, height: fontSize + 3)
                                 // APP图标6 - 青色
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.teal)
-                                    .frame(width: 15, height: 15)
+                                    .frame(width: fontSize + 3, height: fontSize + 3)
                             }
                         }
                         .padding(.top, 4)
                     }
                 }
+                
                 // 主题名称
                 Text(mode == .light ? "浅色" : "深色")
-                    .font(.headline)
-                    .fontWeight(isSelected ? .bold : .medium)
+                    .font(.system(size: fontSize + 2, weight: isSelected ? .bold : .medium))
                     .foregroundColor(isSelected ? ThemeManager.shared.accentColor : .primary)
+                
                 // 选择指示器
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(ThemeManager.shared.accentColor)
-                        .font(.title2)
+                        .font(.system(size: fontSize + 6))
                         .scaleEffect(1.2)
                 }
             }
@@ -164,6 +202,7 @@ struct FloatingThemeOption: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
+    
     // 主题相关的颜色计算属性
     private var themeBackgroundColor: Color {
         switch mode {
@@ -173,6 +212,7 @@ struct FloatingThemeOption: View {
             return ModernDarkColors.surfacePrimary
         }
     }
+    
     private var themeTextColor: Color {
         switch mode {
         case .light:
@@ -181,6 +221,7 @@ struct FloatingThemeOption: View {
             return ModernDarkColors.textPrimary
         }
     }
+    
     private var themeSecondaryColor: Color {
         switch mode {
         case .light:
@@ -189,6 +230,7 @@ struct FloatingThemeOption: View {
             return ModernDarkColors.textSecondary
         }
     }
+    
     private var themeSearchBarColor: Color {
         switch mode {
         case .light:

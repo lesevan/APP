@@ -20,30 +20,8 @@ enum ThemeMode: String, CaseIterable {
         }
     }
 }
-/// 高级现代深色UI颜色系统
-struct ModernDarkColors {
-    // 背景色系
-    static let primaryBackground = Color(red: 0.05, green: 0.05, blue: 0.08) // 深蓝黑
-    static let secondaryBackground = Color(red: 0.08, green: 0.08, blue: 0.12) // 稍亮的深蓝黑
-    static let tertiaryBackground = Color(red: 0.12, green: 0.12, blue: 0.16) // 卡片背景
-    // 表面色系
-    static let surfacePrimary = Color(red: 0.15, green: 0.15, blue: 0.20) // 主要表面
-    static let surfaceSecondary = Color(red: 0.20, green: 0.20, blue: 0.25) // 次要表面
-    static let surfaceElevated = Color(red: 0.25, green: 0.25, blue: 0.30) // 提升表面
-    // 文字色系
-    static let textPrimary = Color.white
-    static let textSecondary = Color(red: 0.8, green: 0.8, blue: 0.85) // 次要文字
-    static let textTertiary = Color(red: 0.6, green: 0.6, blue: 0.65) // 第三级文字
-    // 强调色系
-    static let accentPrimary = Color.cyan
-    static let accentSecondary = Color(red: 0.0, green: 0.8, blue: 1.0) // 亮青色
-    static let accentTertiary = Color(red: 0.2, green: 0.8, blue: 0.8) // 青绿色
-    // 边框和分割线
-    static let borderPrimary = Color(red: 0.3, green: 0.3, blue: 0.35)
-    static let borderSecondary = Color(red: 0.2, green: 0.2, blue: 0.25)
-    // 阴影
-    static let shadowColor = Color.black.opacity(0.4)
-}
+
+
 /// 主题管理器 - 单例类，管理整个APP的主题设置
 class ThemeManager: ObservableObject {
     /// 单例实例
@@ -60,8 +38,6 @@ class ThemeManager: ObservableObject {
     /// 系统是否为深色模式（用于自动主题）
     @Published var isSystemDarkMode: Bool = false
     private init() {
-        // 强制重置为浅色模式（临时修复）
-        UserDefaults.standard.removeObject(forKey: "SelectedTheme")
         // 从用户默认设置加载保存的主题，如果没有保存过则默认为浅色模式
         if let savedTheme = UserDefaults.standard.string(forKey: "SelectedTheme"),
            let theme = ThemeMode(rawValue: savedTheme) {
@@ -78,13 +54,7 @@ class ThemeManager: ObservableObject {
     /// 重置主题设置为默认浅色模式（用于首次登录）
     func resetToDefaultTheme() {
         selectedTheme = .light
-        UserDefaults.standard.removeObject(forKey: "SelectedTheme")
-    }
-    /// 强制重置为浅色模式（临时修复深色模式问题）
-    func forceResetToLightTheme() {
-        selectedTheme = .light
-        UserDefaults.standard.removeObject(forKey: "SelectedTheme")
-        UserDefaults.standard.synchronize()
+        UserDefaults.standard.set(selectedTheme.rawValue, forKey: "SelectedTheme")
     }
     /// 检测系统主题
     private func detectSystemTheme() {
