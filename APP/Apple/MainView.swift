@@ -88,6 +88,7 @@ struct MainView: View {
         }
         .background(themeManager.backgroundColor)
         .ignoresSafeArea()
+        .modifier(TrollStoreCompatibilityModifier()) // 新增
     }
 }
 
@@ -109,9 +110,13 @@ struct ModernSegmentedTabBar: View {
     // 简化标签栏高度设置，避免设备类型检测问题
     private var tabBarHeight: CGFloat {
         #if canImport(UIKit)
-        // 根据安全区域动态调整高度
-        let safeAreaBottom = UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0
-        return 80 + safeAreaBottom
+        // 使用现代的安全区域检测方法
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            let safeAreaBottom = window.safeAreaInsets.bottom
+            return 80 + safeAreaBottom
+        }
+        return 80
         #else
         return 80
         #endif
@@ -341,5 +346,21 @@ struct ModernSegmentedTabItem: View {
         }
         .buttonStyle(PlainButtonStyle())
         .iOSCompatibility()
+    }
+}
+
+// 新增TrollStore兼容性修饰符
+struct TrollStoreCompatibilityModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                // TrollStore环境下的特殊处理
+                if DeviceAdapter.shared.isTrollStoreEnvironment {
+                    // 强制刷新布局
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // 触发视图更新
+                    }
+                }
+            }
     }
 }

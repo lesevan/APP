@@ -39,11 +39,27 @@ struct DeviceAdapter {
         #endif
     }
     
-    // 获取安全区域高度
+    // 在DeviceAdapter中添加TrollStore检测
+    var isTrollStoreEnvironment: Bool {
+        #if canImport(UIKit)
+        // 检测是否为TrollStore环境
+        let bundlePath = Bundle.main.bundlePath
+        return bundlePath.contains("TrollStore") || bundlePath.contains("trollstore")
+        #else
+        return false
+        #endif
+    }
+    
+    // 修改安全区域获取逻辑
     var safeAreaTop: CGFloat {
         #if canImport(UIKit)
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            return windowScene.windows.first?.safeAreaInsets.top ?? 0
+            let safeArea = windowScene.windows.first?.safeAreaInsets.top ?? 0
+            // TrollStore环境下使用备用值
+            if isTrollStoreEnvironment && safeArea == 0 {
+                return 44 // 默认安全区域顶部高度
+            }
+            return safeArea
         }
         return 0
         #else
@@ -97,6 +113,12 @@ struct DeviceSpecificFixes {
     func getFixParameters() -> DeviceFixParameters {
         let deviceType = DeviceAdapter.shared.deviceType
         let isIOS18 = iOSVersionChecker.shared.isIOS18
+        let isTrollStore = DeviceAdapter.shared.isTrollStoreEnvironment
+        
+        // TrollStore环境优先使用专用修复参数
+        if isTrollStore {
+            return getTrollStoreFixParameters()
+        }
         
         switch deviceType {
         case .iPhone8, .iPhone8Plus:
@@ -132,6 +154,17 @@ struct DeviceSpecificFixes {
                 needsSpecialHandling: isIOS18
             )
         }
+    }
+
+    // 在DeviceSpecificFixes中添加TrollStore修复
+    func getTrollStoreFixParameters() -> DeviceFixParameters {
+        return DeviceFixParameters(
+            safeAreaTop: 44,
+            safeAreaBottom: 34,
+            tabBarHeight: 83,
+            statusBarHeight: 44,
+            needsSpecialHandling: true
+        )
     }
 }
 
