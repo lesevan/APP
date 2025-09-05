@@ -110,7 +110,6 @@
 			packageReferences = (
 				8597015D2E681B5E00AA64A6 /* XCRemoteSwiftPackageReference "ZipArchive" */,
 				851A3A1D2E6A0AAD002BBBC8 /* XCRemoteSwiftPackageReference "vapor" */,
-				85F1771C2E6AA3240075CC11 /* XCRemoteSwiftPackageReference "Zsign-Package" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 851FD9602E578774002136BA /* Products */;
@@ -406,14 +405,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.6.0;
-			};
-		};
-		85F1771C2E6AA3240075CC11 /* XCRemoteSwiftPackageReference "Zsign-Package" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/khcrysalis/Zsign-Package.git";
-			requirement = {
-				branch = master;
-				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
