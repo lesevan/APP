@@ -41,7 +41,8 @@ struct DownloadSinfInfo {
 // 使用外部IPAProcessor
 #else
 // IPA处理器实现
-class IPAProcessor {
+@MainActor
+class IPAProcessor: @unchecked Sendable {
     static let shared = IPAProcessor()
     
     private init() {}
@@ -386,7 +387,7 @@ class IPAProcessor {
 }
 #endif
 /// 用于处理IPA文件下载的下载管理器，支持进度跟踪和断点续传功能
-class AppStoreDownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate {
+class AppStoreDownloadManager: NSObject, ObservableObject, URLSessionDownloadDelegate, @unchecked Sendable {
     static let shared = AppStoreDownloadManager()
     private var downloadTasks: [String: URLSessionDownloadTask] = [:]
     private var progressHandlers: [String: (DownloadProgress) -> Void] = [:]
@@ -416,13 +417,14 @@ class AppStoreDownloadManager: NSObject, ObservableObject, URLSessionDownloadDel
     ///   - appVersion: 特定的应用版本（可选）
     ///   - progressHandler: 进度回调
     ///   - completion: 完成回调
+    @MainActor
     func downloadApp(
         appIdentifier: String,
         account: Any, // 使用 Any 类型避免编译错误
         destinationURL: URL,
         appVersion: String? = nil,
-        progressHandler: @escaping (DownloadProgress) -> Void,
-        completion: @escaping (Result<DownloadResult, DownloadError>) -> Void
+        progressHandler: @escaping @Sendable (DownloadProgress) -> Void,
+        completion: @escaping @Sendable (Result<DownloadResult, DownloadError>) -> Void
     ) {
         let downloadId = UUID().uuidString
         print("📥 [下载管理器] 开始下载应用: \(appIdentifier)")
@@ -430,7 +432,7 @@ class AppStoreDownloadManager: NSObject, ObservableObject, URLSessionDownloadDel
         print("📥 [下载管理器] 目标路径: \(destinationURL.path)")
         print("📥 [下载管理器] 应用版本: \(appVersion ?? "最新版本")")
         print("📥 [下载管理器] 账户信息: 已传入账户对象")
-        Task {
+        Task { @MainActor in
             do {
                 print("🔍 [下载管理器] 正在获取下载信息...")
                 // 首先从商店API获取下载信息
@@ -735,8 +737,8 @@ class AppStoreDownloadManager: NSObject, ObservableObject, URLSessionDownloadDel
     private func startFileDownload(
         storeItem: DownloadStoreItem,
         destinationURL: URL,
-        progressHandler: @escaping (DownloadProgress) -> Void,
-        completion: @escaping (Result<DownloadResult, DownloadError>) -> Void
+        progressHandler: @escaping @Sendable (DownloadProgress) -> Void,
+        completion: @escaping @Sendable (Result<DownloadResult, DownloadError>) -> Void
     ) async {
         guard let downloadURL = URL(string: storeItem.url) else {
             DispatchQueue.main.async {
@@ -1003,7 +1005,8 @@ extension AppStoreDownloadManager {
             print("🔧 [下载完成] 开始处理IPA文件，确保创建必要的签名文件...")
             print("🔧 [下载完成] 签名信息数量: \(storeItem.sinfs.count)")
             
-            IPAProcessor.shared.processIPA(at: destinationURL, withSinfs: storeItem.sinfs) { processingResult in
+            Task { @MainActor in
+                IPAProcessor.shared.processIPA(at: destinationURL, withSinfs: storeItem.sinfs) { processingResult in
                 switch processingResult {
                 case .success(let processedIPA):
                     print("✅ [IPA处理] 成功处理IPA文件: \(processedIPA.path)")
@@ -1055,6 +1058,7 @@ extension AppStoreDownloadManager {
                         completion(.success(result))
                     }
                 }
+            }
             }
         } catch {
             print("❌ [文件移动失败] \(error.localizedDescription)")

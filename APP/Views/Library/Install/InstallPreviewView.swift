@@ -1,5 +1,6 @@
 
 import SwiftUI
+import IDeviceSwift
 
 struct InstallPreviewView: View {
 	@Environment(\.dismiss) var dismiss
@@ -20,7 +21,7 @@ struct InstallPreviewView: View {
 		self.isSharing = isSharing
 		let viewModel = InstallerStatusViewModel(isIdevice: UserDefaults.standard.integer(forKey: "Feather.installationMethod") == 1)
 		self._viewModel = StateObject(wrappedValue: viewModel)
-		self._installer = StateObject(wrappedValue: ServerInstaller(app: app, viewModel: viewModel))
+		self._installer = StateObject(wrappedValue: try! ServerInstaller(app: app, viewModel: viewModel))
 	}
 	
 	var body: some View {
@@ -97,20 +98,15 @@ struct InstallPreviewView: View {
 				let packageUrl = try await handler.archive()
 				
 				if await !isSharing {
-					if _installationMethod == 0 {
+					if await _installationMethod == 0 {
 						await MainActor.run {
 							installer.packageUrl = packageUrl
 							viewModel.status = .ready
 						}
-					} else if _installationMethod == 1 {
-						let handler = ServerInstaller(app: app, viewModel: viewModel)
-						do {
-							try await handler.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
-						} catch {
-							await MainActor.run {
-								viewModel.status = .broken
-							}
-						}
+					} else if await _installationMethod == 1 {
+						// 使用InstallationProxy进行idevice安装
+						let handler = await InstallationProxy(viewModel: viewModel)
+						try await handler.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
 					}
 				} else {
 					let package = try await handler.moveToArchive(packageUrl, shouldOpen: !_useShareSheet)

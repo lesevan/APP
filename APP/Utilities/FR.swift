@@ -8,29 +8,45 @@ enum FR {
 	static func handlePackageFile(
 		_ ipa: URL,
 		download: Download? = nil,
-		completion: @escaping (Error?) -> Void
+		completion: @escaping @Sendable (Error?) -> Void
 	) {
-		Logger.misc.info("FR.handlePackageFile 调用: \(ipa.path)")
+		Task { @MainActor in
+			Logger.misc.info("FR.handlePackageFile 调用: \(ipa.path)")
+		}
 		Task.detached {
 			let handler = AppFileHandler(file: ipa, download: download)
 			
 				do {
-					Logger.misc.info("开始IPA处理流程")
+					Task { @MainActor in
+						Logger.misc.info("开始IPA处理流程")
+					}
 					try await handler.performCopy()
-				Logger.misc.info("复制完成")
+					Task { @MainActor in
+						Logger.misc.info("复制完成")
+					}
 				try await handler.extract()
-				Logger.misc.info("解压完成")
+				Task { @MainActor in
+					Logger.misc.info("解压完成")
+				}
 				try await handler.move()
-				Logger.misc.info("移动完成")
+				Task { @MainActor in
+					Logger.misc.info("移动完成")
+				}
 				try await handler.addToDatabase()
-				Logger.misc.info("添加到数据库完成")
+				Task { @MainActor in
+					Logger.misc.info("添加到数据库完成")
+				}
 				try? await handler.clean()
-				Logger.misc.info("IPA处理成功完成")
+				Task { @MainActor in
+					Logger.misc.info("IPA处理成功完成")
+				}
 				await MainActor.run {
 					completion(nil)
 				}
 			} catch {
-				Logger.misc.error("IPA处理失败: \(error.localizedDescription)")
+				Task { @MainActor in
+					Logger.misc.error("IPA处理失败: \(error.localizedDescription)")
+				}
 				try? await handler.clean()
 				await MainActor.run {
 					completion(error)
@@ -46,7 +62,7 @@ enum FR {
 		certificate: CertificatePair?,
 		completion: @escaping (Error?) -> Void
 	) {
-		Task.detached {
+		Task {
 			let handler = SigningHandler(app: app, options: options)
 			handler.appCertificate = certificate
 			handler.appIcon = icon
@@ -55,14 +71,10 @@ enum FR {
 				try await handler.copy()
 				try await handler.modify()
 				try? await handler.clean()
-				await MainActor.run {
-					completion(nil)
-				}
+				completion(nil)
 			} catch {
 				try? await handler.clean()
-				await MainActor.run {
-					completion(error)
-				}
+				completion(error)
 			}
 		}
 	}
@@ -72,23 +84,28 @@ enum FR {
 		provisionURL: URL,
 		p12Password: String,
 		certificateName: String = "",
-		completion: @escaping (Error?) -> Void
+		completion: @escaping @Sendable (Error?) -> Void
 	) {
 		Task.detached {
-			let handler = CertificateFileHandler(
-				key: p12URL,
-				provision: provisionURL,
-				password: p12Password,
-				nickname: certificateName.isEmpty ? nil : certificateName
-			)
-			
 			do {
+				let handler = CertificateFileHandler(
+					key: p12URL,
+					provision: provisionURL,
+					password: p12Password,
+					nickname: certificateName.isEmpty ? nil : certificateName
+				)
+				
+				print("开始处理证书文件: \(p12URL.lastPathComponent)")
 				try await handler.copy()
+				print("证书文件复制完成，开始添加到数据库")
 				try await handler.addToDatabase()
+				print("证书导入成功")
+				
 				await MainActor.run {
 					completion(nil)
 				}
 			} catch {
+				print("证书导入失败: \(error.localizedDescription)")
 				await MainActor.run {
 					completion(error)
 				}
@@ -122,68 +139,75 @@ enum FR {
 		
 		try? fileManager.copyItem(at: url, to: dest)
 		
-		HeartbeatManager.shared.start(true)
+		Task { @MainActor in
+			HeartbeatManager.shared.start(true)
+		}
 	}
 	
 	static func downloadSSLCertificates(
 		from urlString: String,
-		completion: @escaping (Bool) -> Void
+		completion: @escaping @Sendable (Bool) -> Void
 	) {
-		let generator = UINotificationFeedbackGenerator()
-		generator.prepare()
-		
-		NBFetchService().fetch(from: urlString) { (result: Result<ServerView.ServerPackModel, Error>) in
-			switch result {
-			case .success(let pack):
-				do {
-					try FileManager.forceWrite(content: pack.key, to: "server.pem")
-					try FileManager.forceWrite(content: pack.cert, to: "server.crt")
-					try FileManager.forceWrite(content: pack.info.domains.commonName, to: "commonName.txt")
-					generator.notificationOccurred(.success)
-					completion(true)
-				} catch {
+		Task { @MainActor in
+			let generator = UINotificationFeedbackGenerator()
+			generator.prepare()
+			
+			NBFetchService().fetch(from: urlString) { (result: Result<ServerView.ServerPackModel, Error>) in
+				switch result {
+				case .success(let pack):
+					do {
+						try FileManager.forceWrite(content: pack.key, to: "server.pem")
+						try FileManager.forceWrite(content: pack.cert, to: "server.crt")
+						try FileManager.forceWrite(content: pack.info.domains.commonName, to: "commonName.txt")
+						Task { @MainActor in
+							generator.notificationOccurred(.success)
+						}
+						completion(true)
+					} catch {
+						completion(false)
+					}
+				case .failure(_):
 					completion(false)
 				}
-			case .failure(_):
-				completion(false)
 			}
 		}
 	}
 	
 	
 	static func exportCertificateAndOpenUrl(using template: String) {
-		func performExport(for certificate: CertificatePair) {
-			guard
-				let certificateKeyFile = Storage.shared.getFile(.certificate, from: certificate),
-				let certificateKeyFileData = try? Data(contentsOf: certificateKeyFile)
-			else {
-				return
+		Task { @MainActor in
+			@MainActor
+			func performExport(for certificate: CertificatePair) {
+				guard
+					let certificateKeyFile = Storage.shared.getFile(.certificate, from: certificate),
+					let certificateKeyFileData = try? Data(contentsOf: certificateKeyFile)
+				else {
+					return
+				}
+				
+				let base64encodedCert = certificateKeyFileData.base64EncodedString()
+				
+				var allowedQueryParamAndKey = NSCharacterSet.urlQueryAllowed
+				allowedQueryParamAndKey.remove(charactersIn: ";/?:@&=+$, ")
+				
+				guard let encodedCert = base64encodedCert.addingPercentEncoding(withAllowedCharacters: allowedQueryParamAndKey) else {
+					return
+				}
+				
+				let urlStr = template
+					.replacingOccurrences(of: "$(BASE64_CERT)", with: encodedCert)
+					.replacingOccurrences(of: "$(PASSWORD)", with: certificate.password ?? "")
+				
+				guard let callbackUrl = URL(string: urlStr) else {
+					return
+				}
+				
+				UIApplication.shared.open(callbackUrl)
 			}
 			
-			let base64encodedCert = certificateKeyFileData.base64EncodedString()
+			let certificates = Storage.shared.getAllCertificates()
+			guard !certificates.isEmpty else { return }
 			
-			var allowedQueryParamAndKey = NSCharacterSet.urlQueryAllowed
-			allowedQueryParamAndKey.remove(charactersIn: ";/?:@&=+$, ")
-			
-			guard let encodedCert = base64encodedCert.addingPercentEncoding(withAllowedCharacters: allowedQueryParamAndKey) else {
-				return
-			}
-			
-			let urlStr = template
-				.replacingOccurrences(of: "$(BASE64_CERT)", with: encodedCert)
-				.replacingOccurrences(of: "$(PASSWORD)", with: certificate.password ?? "")
-			
-			guard let callbackUrl = URL(string: urlStr) else {
-				return
-			}
-			
-			UIApplication.shared.open(callbackUrl)
-		}
-		
-		let certificates = Storage.shared.getAllCertificates()
-		guard !certificates.isEmpty else { return }
-		
-		DispatchQueue.main.async {
 			var selectionActions: [UIAlertAction] = []
 			
 			for cert in certificates {

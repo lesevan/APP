@@ -2,58 +2,87 @@ import CoreData
 import OSLog
 extension Storage {
 	func getUuidDirectory(for app: AppInfoPresentable) -> URL? {
-		guard let uuid = app.uuid else { 
-			Logger.misc.error("getUuidDirectory: UUID为空，应用: \(app.name ?? "未知")")
+		// 提取需要的值到局部变量，避免在闭包中捕获app
+		let appName = app.name
+		let uuid = app.uuid
+		let isSigned = app.isSigned
+		
+		guard let uuid = uuid else { 
+			Task { @MainActor in
+				Logger.misc.error("getUuidDirectory: UUID为空，应用: \(appName ?? "未知")")
+			}
 			return nil 
 		}
 		
-		Logger.misc.info("getUuidDirectory: UUID: \(uuid), isSigned: \(app.isSigned)")
+		Task { @MainActor in
+			Logger.misc.info("getUuidDirectory: UUID: \(uuid), isSigned: \(isSigned)")
+		}
 		
-		let directory = app.isSigned
+		let directory = isSigned
 		? FileManager.default.signed(uuid)
 		: FileManager.default.unsigned(uuid)
 		
-		Logger.misc.info("getUuidDirectory: 目录路径: \(directory.path)")
+		Task { @MainActor in
+			Logger.misc.info("getUuidDirectory: 目录路径: \(directory.path)")
+		}
 		
 		return directory
 	}
 	
 	func getAppDirectory(for app: AppInfoPresentable) -> URL? {
+		// 提取需要的值到局部变量，避免在闭包中捕获app
+		let appName = app.name
+		
 		guard let url = getUuidDirectory(for: app) else { 
-			Logger.misc.error("getAppDirectory: UUID目录为空，应用: \(app.name ?? "未知")")
+			Task { @MainActor in
+				Logger.misc.error("getAppDirectory: UUID目录为空，应用: \(appName ?? "未知")")
+			}
 			return nil 
 		}
 		
-		Logger.misc.info("getAppDirectory: UUID目录: \(url.path)")
+		Task { @MainActor in
+			Logger.misc.info("getAppDirectory: UUID目录: \(url.path)")
+		}
 		
 		if !FileManager.default.fileExists(atPath: url.path) {
-			Logger.misc.error("getAppDirectory: UUID目录不存在: \(url.path)")
+			Task { @MainActor in
+				Logger.misc.error("getAppDirectory: UUID目录不存在: \(url.path)")
+			}
 			return nil
 		}
 		
 		if let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) {
-			Logger.misc.info("getAppDirectory: UUID目录内容: \(contents.map { $0.lastPathComponent })")
+			Task { @MainActor in
+				Logger.misc.info("getAppDirectory: UUID目录内容: \(contents.map { $0.lastPathComponent })")
+			}
 		}
 		
 		let result = FileManager.default.getPath(in: url, for: "app")
 		if result == nil {
-			Logger.misc.error("getAppDirectory: 在UUID目录中未找到.app文件")
+			Task { @MainActor in
+				Logger.misc.error("getAppDirectory: 在UUID目录中未找到.app文件")
+			}
 		} else {
-			Logger.misc.info("getAppDirectory: 找到.app文件: \(result!.path)")
+			Task { @MainActor in
+				Logger.misc.info("getAppDirectory: 找到.app文件: \(result!.path)")
+			}
 		}
 		
 		return result
 	}
 	
+	@MainActor
 	func deleteApp(for app: AppInfoPresentable) {
-		do {
-			if let url = getUuidDirectory(for: app) {
-				try? FileManager.default.removeItem(at: url)
-			}
-			if let object = app as? NSManagedObject {
-				context.delete(object)
-			}
-			saveContext()
+		Task { @MainActor in
+			CrashProtection.shared.safeExecuteInAutoreleasePool({
+				if let url = getUuidDirectory(for: app) {
+					try? FileManager.default.removeItem(at: url)
+				}
+				if let object = app as? NSManagedObject {
+					context.delete(object)
+				}
+				saveContext()
+			}, fallback: (), operationName: "Delete app")
 		}
 	}
 	

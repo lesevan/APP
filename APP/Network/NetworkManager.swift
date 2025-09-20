@@ -9,7 +9,8 @@ import Foundation
 import Network
 import Combine
 
-class NetworkManager: ObservableObject {
+@MainActor
+class NetworkManager: ObservableObject, @unchecked Sendable {
     static let shared = NetworkManager()
     
     @Published var isConnected = false

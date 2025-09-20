@@ -1992,13 +1992,13 @@ struct SearchView: SwiftUI.View {
                     throw NSError(domain: "SearchView", code: -1, userInfo: [NSLocalizedDescriptionKey: "未登录账户，无法获取版本信息"])
                 }
                 // 并行：StoreClient 版本ID集合 + iTunes 版本历史详情
-                async let storeVersionsTask: Result<[StoreAppVersion], StoreError> = StoreClient.shared.getAppVersions(
+                let accountCopy = account
+                let storeVersionsResult = await StoreClient.shared.getAppVersions(
                     trackId: String(app.trackId),
-                    account: account,
+                    account: accountCopy,
                     countryCode: effectiveSearchRegion
                 )
-                async let historyTask: [iTunesClient.AppVersionInfo] = try iTunesClient.shared.versionHistory(id: app.trackId, country: effectiveSearchRegion)
-                let (storeVersionsResult, hist) = try await (storeVersionsTask, historyTask)
+                let hist = try await iTunesClient.shared.versionHistory(id: app.trackId, country: effectiveSearchRegion)
                 switch storeVersionsResult {
                 case .success(let versions):
                     await MainActor.run {

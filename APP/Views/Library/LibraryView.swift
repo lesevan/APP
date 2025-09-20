@@ -1,9 +1,11 @@
 import SwiftUI
 import CoreData
 import UniformTypeIdentifiers
+import os.log
 
 struct LibraryView: View {
 	@StateObject var downloadManager = DownloadManager.shared
+	@StateObject var fileImportManager = FileImportManager.shared
 	
 	@State private var _selectedInfoAppPresenting: AnyApp?
 	@State private var _selectedSigningAppPresenting: AnyApp?
@@ -50,9 +52,20 @@ struct LibraryView: View {
 	
     var body: some View {
 		NavigationView {
-			_mainContent
-				.navigationTitle("应用库")
-				.navigationBarTitleDisplayMode(.large)
+			ZStack {
+				_mainContent
+					.navigationTitle("应用库")
+					.navigationBarTitleDisplayMode(.large)
+				
+				// 文件导入进度显示
+				if fileImportManager.isImporting {
+					VStack {
+						Spacer()
+						FileImportProgressView()
+							.padding()
+					}
+				}
+			}
 				.navigationBarItems(
 					leading: EditButton(),
 					trailing: Group {
@@ -113,10 +126,11 @@ struct LibraryView: View {
 					onDocumentsPicked: { urls in
 						guard !urls.isEmpty else { return }
 						
-						for url in urls {
-							let id = "FeatherManualDownload_\(UUID().uuidString)"
-							let dl = downloadManager.startArchive(from: url, id: id)
-							try? downloadManager.handlePachageFile(url: url, dl: dl)
+						// 使用FileImportManager进行文件导入
+						if urls.count == 1 {
+							fileImportManager.importFile(urls[0])
+						} else {
+							fileImportManager.importFiles(urls)
 						}
 					}
 				)
@@ -267,9 +281,8 @@ struct MultiFileImporterView: UIViewControllerRepresentable {
     let onDocumentsPicked: ([URL]) -> Void
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes)
+        let picker = iOSCompatibility.shared.createDocumentPicker(for: allowedContentTypes, allowsMultipleSelection: true)
         picker.delegate = context.coordinator
-        picker.allowsMultipleSelection = true
         return picker
     }
     
@@ -281,27 +294,26 @@ struct MultiFileImporterView: UIViewControllerRepresentable {
     
     class Coordinator: NSObject, UIDocumentPickerDelegate {
         let onDocumentsPicked: ([URL]) -> Void
+        private let logger = Logger(subsystem: "com.feather.multifileimporter", category: "MultiFileImporter")
         
         init(onDocumentsPicked: @escaping ([URL]) -> Void) {
             self.onDocumentsPicked = onDocumentsPicked
         }
         
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            // 处理文件权限
-            let accessibleUrls = urls.compactMap { url -> URL? in
-                if url.startAccessingSecurityScopedResource() {
-                    return url
-                }
-                return nil
+            logger.info("选择了 \(urls.count) 个文件")
+            
+            // 使用兼容性工具处理文件权限
+            iOSCompatibility.shared.handleFileImportPermissions(for: urls) { [weak self] accessibleUrls in
+                guard let self = self else { return }
+                
+                self.logger.info("成功获取 \(accessibleUrls.count) 个文件的访问权限")
+                self.onDocumentsPicked(accessibleUrls)
             }
-            
-            onDocumentsPicked(accessibleUrls)
-            
-            // 注意：不要调用stopAccessingSecurityScopedResource
-            // 因为文件处理可能需要持续访问权限
         }
         
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            logger.info("用户取消了多文件选择")
             onDocumentsPicked([])
         }
     }

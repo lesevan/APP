@@ -129,7 +129,8 @@ struct iTunesSearchResult: Codable, Identifiable, Hashable {
 }
 
 /// 用于在 iTunes 应用商店搜索和查找应用的 API 客户端
-class iTunesClient {
+@MainActor
+class iTunesClient: @unchecked Sendable {
     static let shared = iTunesClient()
     private let session: URLSession
     private let baseURL = "https://itunes.apple.com"

@@ -25,6 +25,7 @@ extension Storage {
 		completion(nil)
 	}
 	
+	@MainActor
 	func deleteCertificate(for cert: CertificatePair) {
 		if let url = getUuidDirectory(for: cert) {
 			try? FileManager.default.removeItem(at: url)
@@ -47,18 +48,27 @@ extension Storage {
 		return results[index]
 	}
 	
-	func revokagedCertificate(for cert: CertificatePair) {
+	nonisolated func revokagedCertificate(for cert: CertificatePair) {
 		guard !cert.revoked else { return }
 		
+		// 提取所有需要的值到局部变量，避免在闭包中捕获cert对象
+		let certUUID = cert.uuid ?? ""
+		let provisionPath = Storage.shared.getFile(.provision, from: cert)?.path ?? ""
+		let p12Path = Storage.shared.getFile(.certificate, from: cert)?.path ?? ""
+		let p12Password = cert.password ?? ""
+		
 		Zsign.checkRevokage(
-			provisionPath: Storage.shared.getFile(.provision, from: cert)?.path ?? "",
-			p12Path: Storage.shared.getFile(.certificate, from: cert)?.path ?? "",
-			p12Password: cert.password ?? ""
+			provisionPath: provisionPath,
+			p12Path: p12Path,
+			p12Password: p12Password
 		) { (status, _, _) in
 			if status == 1 {
 				DispatchQueue.main.async {
-					cert.revoked = true
-					self.saveContext()
+					// 通过UUID重新获取证书对象，避免数据竞争
+					if let certToUpdate = Storage.shared.getCertificateByUUID(certUUID) {
+						certToUpdate.revoked = true
+						Storage.shared.saveContext()
+					}
 				}
 			}
 		}
@@ -98,5 +108,12 @@ extension Storage {
 		let fetchRequest: NSFetchRequest<CertificatePair> = CertificatePair.fetchRequest()
 		fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)]
 		return (try? context.fetch(fetchRequest)) ?? []
+	}
+	
+	func getCertificateByUUID(_ uuid: String) -> CertificatePair? {
+		let fetchRequest: NSFetchRequest<CertificatePair> = CertificatePair.fetchRequest()
+		fetchRequest.predicate = NSPredicate(format: "uuid == %@", uuid)
+		fetchRequest.fetchLimit = 1
+		return (try? context.fetch(fetchRequest))?.first
 	}
 }

@@ -1,14 +1,26 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import os.log
 
 
 struct FileImporterRepresentableView: UIViewControllerRepresentable {
     let allowedContentTypes: [UTType]
-    let onResult: (Result<URL, Error>) -> Void
+    let allowsMultipleSelection: Bool
+    let onDocumentsPicked: ([URL]) -> Void
+    
+    init(
+        allowedContentTypes: [UTType],
+        allowsMultipleSelection: Bool = false,
+        onDocumentsPicked: @escaping ([URL]) -> Void
+    ) {
+        self.allowedContentTypes = allowedContentTypes
+        self.allowsMultipleSelection = allowsMultipleSelection
+        self.onDocumentsPicked = onDocumentsPicked
+    }
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes, asCopy: true)
+        let picker = iOSCompatibility.shared.createDocumentPicker(for: allowedContentTypes, allowsMultipleSelection: allowsMultipleSelection)
         picker.delegate = context.coordinator
         return picker
     }
@@ -16,26 +28,25 @@ struct FileImporterRepresentableView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(onResult: onResult)
+        Coordinator(onDocumentsPicked: onDocumentsPicked)
     }
     
     class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let onResult: (Result<URL, Error>) -> Void
+        let onDocumentsPicked: ([URL]) -> Void
+        private let logger = Logger(subsystem: "com.feather.fileimporter", category: "FileImporter")
         
-        init(onResult: @escaping (Result<URL, Error>) -> Void) {
-            self.onResult = onResult
+        init(onDocumentsPicked: @escaping ([URL]) -> Void) {
+            self.onDocumentsPicked = onDocumentsPicked
         }
         
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            guard let url = urls.first else {
-                onResult(.failure(NSError(domain: "FileImporter", code: -1, userInfo: [NSLocalizedDescriptionKey: "No file selected"])))
-                return
-            }
-            onResult(.success(url))
+            logger.info("选择了 \(urls.count) 个文件")
+            onDocumentsPicked(urls)
         }
         
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-            onResult(.failure(NSError(domain: "FileImporter", code: -2, userInfo: [NSLocalizedDescriptionKey: "User cancelled"])))
+            logger.info("用户取消了文件选择")
+            onDocumentsPicked([])
         }
     }
 }
@@ -99,13 +110,9 @@ struct CertificatesAddView: View {
 			.sheet(isPresented: $_isImportingP12Presenting) {
 				FileImporterRepresentableView(
 					allowedContentTypes: [.p12],
-					onResult: { result in
-						switch result {
-						case .success(let url):
-							self._p12URL = url
-						case .failure(let error):
-							print("Error selecting file: \(error)")
-						}
+					onDocumentsPicked: { urls in
+						guard let selectedFileURL = urls.first else { return }
+						self._p12URL = selectedFileURL
 					}
 				)
 				.ignoresSafeArea()
@@ -113,13 +120,9 @@ struct CertificatesAddView: View {
 			.sheet(isPresented: $_isImportingMobileProvisionPresenting) {
 				FileImporterRepresentableView(
 					allowedContentTypes: [.mobileProvision],
-					onResult: { result in
-						switch result {
-						case .success(let url):
-							self._provisionURL = url
-						case .failure(let error):
-							print("Error selecting file: \(error)")
-						}
+					onDocumentsPicked: { urls in
+						guard let selectedFileURL = urls.first else { return }
+						self._provisionURL = selectedFileURL
 					}
 				)
 				.ignoresSafeArea()

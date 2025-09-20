@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class AppDetailModel: ObservableObject {
     
     @Published var appDetail: AppDetail?
@@ -26,20 +27,22 @@ class AppDetailModel: ObservableObject {
         let endpoint: APIService.Endpoint = APIService.Endpoint.lookupApp(appid: appId, country: regionId)
         
         APIService.shared.POST(endpoint: endpoint, params: nil) { [weak self] (result: Result<AppDetailM, APIService.APIError>) in
-            DispatchQueue.main.async {
-                self?.isLoading = false
+            Task { @MainActor in
+                guard let self = self else { return }
+                
+                self.isLoading = false
                 
                 switch result {
                 case .success(let response):
                     if response.resultCount > 0 {
-                        self?.appDetail = response.results.first
+                        self.appDetail = response.results.first
                     } else {
-                        self?.isError = true
-                        self?.errorMessage = "应用未找到"
+                        self.isError = true
+                        self.errorMessage = "应用未找到"
                     }
                 case .failure(let error):
-                    self?.isError = true
-                    self?.errorMessage = "加载失败: \(error.localizedDescription)"
+                    self.isError = true
+                    self.errorMessage = "加载失败: \(error.localizedDescription)"
                 }
             }
         }
@@ -54,20 +57,22 @@ class AppDetailModel: ObservableObject {
         let endpoint: APIService.Endpoint = APIService.Endpoint.lookupBundleId(appid: bundleId, country: regionId)
         
         APIService.shared.POST(endpoint: endpoint, params: nil) { [weak self] (result: Result<AppDetailM, APIService.APIError>) in
-            DispatchQueue.main.async {
-                self?.isLoading = false
+            Task { @MainActor in
+                guard let self = self else { return }
+                
+                self.isLoading = false
                 
                 switch result {
                 case .success(let response):
                     if response.resultCount > 0 {
-                        self?.appDetail = response.results.first
+                        self.appDetail = response.results.first
                     } else {
-                        self?.isError = true
-                        self?.errorMessage = "应用未找到"
+                        self.isError = true
+                        self.errorMessage = "应用未找到"
                     }
                 case .failure(let error):
-                    self?.isError = true
-                    self?.errorMessage = "加载失败: \(error.localizedDescription)"
+                    self.isError = true
+                    self.errorMessage = "加载失败: \(error.localizedDescription)"
                 }
             }
         }

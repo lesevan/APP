@@ -7,7 +7,7 @@
 import Foundation
 import CryptoKit
 /// 用于处理SSL和身份验证挑战的URLSession代理
-class StoreRequestDelegate: NSObject, URLSessionDelegate {
+class StoreRequestDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         // 处理SSL证书验证
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust else {
@@ -24,9 +24,11 @@ class StoreRequestDelegate: NSObject, URLSessionDelegate {
     }
 }
 /// 用于身份验证、下载和购买的Store API请求处理器
-class StoreRequest {
+@MainActor
+class StoreRequest: @unchecked Sendable {
     static let shared = StoreRequest()
     // 统一GUID：确保认证/购买/下载使用同一个GUID
+    @MainActor
     private static var cachedGUID: String?
     private let session: URLSession
     private let baseURL = "https://p25-buy.itunes.apple.com"

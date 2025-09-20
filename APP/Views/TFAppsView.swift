@@ -7,7 +7,8 @@ import Foundation
 import CommonCrypto
 
 // 网页缓存管理器
-class WebCacheManager: ObservableObject {
+@MainActor
+class WebCacheManager: ObservableObject, @unchecked Sendable {
     static let shared = WebCacheManager()
     
     private let cacheDirectory: URL

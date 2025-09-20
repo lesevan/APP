@@ -60,11 +60,15 @@ struct SigningTweaksView: View {
 		.sheet(isPresented: $_isAddingPresenting) {
 			FileImporterRepresentableView(
 				allowedContentTypes: [.dylib, .deb],
-				onResult: { result in
+				onDocumentsPicked: { urls in
 					DispatchQueue.main.async { _isAddingPresenting = false }
-					switch result {
-					case .success(let url):
-						guard ["dylib", "deb"].contains(url.pathExtension.lowercased()) else { return }
+					for url in urls {
+						// 使用兼容性工具验证文件类型
+						guard iOSCompatibility.shared.validateFileType(url, allowedTypes: ["dylib", "deb"]) else { 
+							print("不支持的文件类型: \(url.pathExtension)")
+							continue 
+						}
+						
 						FileManager.default.moveAndStore(url, with: "FeatherTweak") { storedURL in
 							DispatchQueue.main.async {
 								if !options.injectionFiles.contains(storedURL) {
@@ -72,8 +76,6 @@ struct SigningTweaksView: View {
 								}
 							}
 						}
-					case .failure(let error):
-						print("Failed to import files: \(error)")
 					}
 				}
 			)

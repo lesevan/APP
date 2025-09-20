@@ -13,6 +13,11 @@ struct FeatherApp: App {
 	@StateObject var appStore = AppStore.this
 	let storage = Storage.shared
 	
+	init() {
+		// 初始化内存安全监控
+		_ = MemoryPressureMonitor.shared
+	}
+	
 	var body: some Scene {
 		WindowGroup {
 			VStack {
@@ -129,19 +134,23 @@ struct FeatherApp: App {
 						return 
 					}
 					FR.handlePackageFile(url) { error in
-						if let error = error {
-							Logger.misc.error("IPA处理失败: \(error.localizedDescription)")
-						} else {
-							Logger.misc.info("IPA处理成功完成")
+						Task { @MainActor in
+							if let error = error {
+								Logger.misc.error("IPA处理失败: \(error.localizedDescription)")
+							} else {
+								Logger.misc.info("IPA处理成功完成")
+							}
 						}
 					}
 				} else {
 					Logger.misc.info("文件是本地文件，直接处理")
 					FR.handlePackageFile(url) { error in
-						if let error = error {
-							Logger.misc.error("IPA处理失败: \(error.localizedDescription)")
-						} else {
-							Logger.misc.info("IPA处理成功完成")
+						Task { @MainActor in
+							if let error = error {
+								Logger.misc.error("IPA处理失败: \(error.localizedDescription)")
+							} else {
+								Logger.misc.info("IPA处理成功完成")
+							}
 						}
 					}
 				}
@@ -153,15 +162,30 @@ struct FeatherApp: App {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+	private let logger = Logger(subsystem: "com.feather.app", category: "AppDelegate")
+	
 	func application(
 		_ application: UIApplication,
 		didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
 	) -> Bool {
-		_setupLibraryPaths()
-		_createPipeline()
-		_createDocumentsDirectories()
-		ResetView.clearWorkCache()
+		logger.info("Application did finish launching")
+		
+		SafeAutoreleasePool.execute {
+			_setupLibraryPaths()
+			_createPipeline()
+			_createDocumentsDirectories()
+			ResetView.clearWorkCache()
+		}
+		
 		return true
+	}
+	
+	func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+		logger.warning("Application received memory warning")
+		// 执行内存清理
+		Task { @MainActor in
+			MemorySafety.shared.cleanup()
+		}
 	}
 	
 	private func _setupLibraryPaths() {

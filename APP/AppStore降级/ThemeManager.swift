@@ -17,7 +17,8 @@ enum AppTheme: Int, CaseIterable {
     case dark = 2       // 对应UIUserInterfaceStyle.dark.rawValue  
     case system = 0     // 对应UIUserInterfaceStyle.unspecified.rawValue
 }
-class ThemeManager: ObservableObject {
+@MainActor
+class ThemeManager: ObservableObject, @unchecked Sendable {
     static let shared = ThemeManager()
     
     @Published var selectedTheme: AppTheme = .system {

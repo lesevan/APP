@@ -19,7 +19,7 @@ extension UIImage {
 func LCPatchMachOForSDK26(_ path: UnsafePointer<CChar>?) -> NSString?
 
 
-final class SigningHandler: NSObject {
+final class SigningHandler: NSObject, @unchecked Sendable {
 	private let _fileManager = FileManager.default
 	private let _uuid = UUID().uuidString
 	private var _movedAppPath: URL?
@@ -29,7 +29,7 @@ final class SigningHandler: NSObject {
 	var appIcon: UIImage?
 	var appCertificate: CertificatePair?
 	
-	init(app: AppInfoPresentable, options: Options = OptionsManager.shared.options) {
+	init(app: AppInfoPresentable, options: Options = Options.defaultOptions) {
 		self._app = app
 		self._options = options
 		self._uniqueWorkDir = _fileManager.temporaryDirectory
@@ -48,7 +48,10 @@ final class SigningHandler: NSObject {
 		
 		try _fileManager.copyItem(at: appUrl, to: movedAppURL)
 		_movedAppPath = movedAppURL
-		Logger.misc.info("[\(self._uuid)] 已移动Payload到: \(movedAppURL.path)")
+		let uuid = _uuid
+		Task { @MainActor in
+			Logger.misc.info("[\(uuid)] 已移动Payload到: \(movedAppURL.path)")
+		}
 	}
 	
 	func modify() async throws {
@@ -109,6 +112,7 @@ final class SigningHandler: NSObject {
 		{
 			try await handler.sign()
 		} else if _options.signingOption == .onlyModify {
+			// 只修改，不签名
 		} else {
 			throw SigningFileHandlerError.missingCertifcate
 		}
@@ -133,7 +137,10 @@ final class SigningHandler: NSObject {
 		destinationURL = destinationURL.appendingPathComponent(movedAppPath.lastPathComponent)
 		
 		try _fileManager.moveItem(at: movedAppPath, to: destinationURL)
-		Logger.misc.info("[\(self._uuid)] 已移动应用到: \(destinationURL.path)")
+		let uuid = _uuid
+		Task { @MainActor in
+			Logger.misc.info("[\(uuid)] 已移动应用到: \(destinationURL.path)")
+		}
 		
 		try? _fileManager.removeItem(at: _uniqueWorkDir)
 	}
@@ -147,17 +154,22 @@ final class SigningHandler: NSObject {
 		
 		await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
 			let bundle = Bundle(url: appUrl)
+			let uuid = _uuid
+			let signingOption = _options.signingOption
+			let certificate = appCertificate
 			
-			Storage.shared.addSigned(
-				uuid: _uuid,
-				certificate: _options.signingOption != .default ? nil : appCertificate,
-				appName: bundle?.name,
-				appIdentifier: bundle?.bundleIdentifier,
-				appVersion: bundle?.version,
-				appIcon: bundle?.iconFileName
-			) { _ in
-				Logger.signing.info("[\(self._uuid)] 已添加到数据库")
-				continuation.resume()
+			Task { @MainActor in
+				Storage.shared.addSigned(
+					uuid: uuid,
+					certificate: signingOption != .default ? nil : certificate,
+					appName: bundle?.name,
+					appIdentifier: bundle?.bundleIdentifier,
+					appVersion: bundle?.version,
+					appIcon: bundle?.iconFileName
+				) { _ in
+					Logger.signing.info("[\(uuid)] 已添加到数据库")
+					continuation.resume()
+				}
 			}
 		}
 	}

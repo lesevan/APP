@@ -16,7 +16,7 @@ import Combine
 
 /// 底层下载和UI层管理
 @MainActor
-class UnifiedDownloadManager: ObservableObject {
+class UnifiedDownloadManager: ObservableObject, @unchecked Sendable {
     static let shared = UnifiedDownloadManager()
     
     @Published var downloadRequests: [DownloadRequest] = []
@@ -312,6 +312,7 @@ class DownloadRuntime: ObservableObject {
     }
     
     /// 更新进度值并触发UI更新 
+    @MainActor
     func updateProgress(completed: Int64, total: Int64) {
         // 创建新的Progress对象，因为totalUnitCount是只读的
         progress = Progress(totalUnitCount: total)
@@ -326,14 +327,14 @@ class DownloadRuntime: ObservableObject {
         print("🔄 [进度更新] \(percent)% (\(ByteCountFormatter().string(fromByteCount: completed))/\(ByteCountFormatter().string(fromByteCount: total)))")
         
         // 确保UI立即更新
-        DispatchQueue.main.async {
-            self.objectWillChange.send()
+        Task { @MainActor [weak self] in
+            self?.objectWillChange.send()
         }
     }
 }
 
 /// 下载请求
-class DownloadRequest: Identifiable, ObservableObject, Equatable {
+class DownloadRequest: Identifiable, ObservableObject, Equatable, @unchecked Sendable {
     let id = UUID()
     let bundleIdentifier: String
     let version: String

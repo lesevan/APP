@@ -315,9 +315,10 @@ extension StoreResponse.Item: Decodable {
     }
 }
 // MARK: - Apple 主入口
-public enum Apple {
+public enum Apple: @unchecked Sendable {
     // MARK: - 全局配置
-    public static var overrideGUID: String?
+    public static let overrideGUID: String? = nil
+    
     static let storeFrontCodeMap: [String: String] = [
         "US": "143441", "CN": "143465", "JP": "143462", "GB": "143444",
         "DE": "143443", "FR": "143442", "AU": "143460", "CA": "143455",
@@ -380,9 +381,7 @@ public enum Apple {
             return urlRequest
         }
     }
-    // MARK: - Legacy iTunes Client (Deprecated)
-    // Note: This class is deprecated. Use iTunesClient from iTunesAPI.swift instead
-    // Note: StoreClient has been moved to StoreClient.swift
+
     // MARK: - 认证器
     public class Authenticator {
         public let email: String
@@ -390,11 +389,12 @@ public enum Apple {
         public var account: Account? { authenticatedAccount }
         private let storeClient: StoreClient
         private var authenticatedAccount: Account?
-        public init(email: String) {
+        public init(email: String) async {
             self.email = email
             _ = HTTPClient()
-            storeClient = StoreClient.shared
+            storeClient = await StoreClient.shared
         }
+        @MainActor
         public func authenticate(password: String, code: String? = nil) async throws -> Account {
             let result = await storeClient.authenticate(email: email, password: password, mfaCode: code)
             switch result {
@@ -462,14 +462,15 @@ public enum Apple {
         private let storeClient: StoreClient
         public typealias ProgressBlock = (Float) -> Void
         public var onProgress: ProgressBlock?
-        public init(email: String, directoryServicesIdentifier: String, region: String) {
+        public init(email: String, directoryServicesIdentifier: String, region: String) async {
             self.email = email
             self.directoryServicesIdentifier = directoryServicesIdentifier
             self.region = region
             httpClient = HTTPClient()
-            itunesClient = iTunesClient.shared
-            storeClient = StoreClient.shared
+            itunesClient = await iTunesClient.shared
+            storeClient = await StoreClient.shared
         }
+        @MainActor
         public func download(type: EntityType, bundleIdentifier: String, saveToDirectory: URL, withFileName fileName: String?, externalVersionId: String? = nil, shouldSign: Bool = true) async throws -> URL {
             // Look up the app in iTunes
             guard let app = try await itunesClient.lookup(bundleIdentifier: bundleIdentifier, countryCode: region) else {
@@ -511,6 +512,7 @@ public enum Apple {
             }
             return path
         }
+        @MainActor
         private func downloadWithProgress(from url: URL, to saveURL: URL) async throws {
             let request = URLRequest(url: url)
             let (asyncBytes, response) = try await URLSession.shared.bytes(for: request)
@@ -524,13 +526,14 @@ public enum Apple {
                 downloadedData.append(byte)
                 if expectedLength > 0 {
                     let progress = Float(downloadedData.count) / Float(expectedLength)
-                    await MainActor.run {
-                        onProgress?(progress)
+                    await MainActor.run { [weak self] in
+                        self?.onProgress?(progress)
                     }
                 }
             }
             try downloadedData.write(to: saveURL)
         }
+        @MainActor
         private func signIPA(item: StoreResponse.Item, at url: URL) async throws {
             // Convert StoreResponse.Item to StoreItem for SignatureClient
             // Note: This is a simplified conversion - may need adjustment based on actual StoreItem structure
@@ -599,7 +602,7 @@ public enum Apple {
     // MARK: - Legacy Search Method (Deprecated)
     // Note: This method is deprecated. Use iTunesClient.shared.search instead
     public static func purchase(token: String, directoryServicesIdentifier: String, trackID: Int, countryCode: String) async throws {
-        let storeClient = StoreClient.shared // 使用新的单例模式
+        let storeClient = await StoreClient.shared // 使用新的单例模式
         let account = Account(
             name: "",
             email: "",

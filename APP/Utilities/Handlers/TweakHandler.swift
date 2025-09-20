@@ -13,11 +13,11 @@ class TweakHandler {
 
 	init(
 		app: URL,
-		options: Options = OptionsManager.shared.options
+		options: Options? = nil
 	) {
 		self._app = app
-		self._options = options
-		self._urls = options.injectionFiles
+		self._options = options ?? Options.defaultOptions
+		self._urls = self._options.injectionFiles
 	}
 	
 	private func _checkEllekit() async throws {
@@ -27,14 +27,18 @@ class TweakHandler {
 		if let ellekitURL = Bundle.main.url(forResource: "ellekit", withExtension: "deb", subdirectory: "ElleKit") {
 			self._urls.insert(ellekitURL, at: 0)
 		} else {
-			Logger.misc.info("在应用包中未找到ellekit.deb")
+			Task { @MainActor in
+				Logger.misc.info("在应用包中未找到ellekit.deb")
+			}
 		}
 			
 			try _fileManager.createDirectoryIfNeeded(at: _app.appendingPathComponent("Frameworks"))
 		}
 		if _fileManager.fileExists(atPath: frameworksPath.path) {
 			if _options.experiment_replaceSubstrateWithEllekit {
-				Logger.misc.info("尝试用ElleKit替换Substrate")
+				Task { @MainActor in
+					Logger.misc.info("尝试用ElleKit替换Substrate")
+				}
 				try _fileManager.removeFileIfNeeded(at: frameworksPath)
 				try await addEllekit()
 			} else {
@@ -47,7 +51,9 @@ class TweakHandler {
 	}
 
 	public func getInputFiles() async throws {
-		Logger.misc.info("尝试注入")
+		Task { @MainActor in
+			Logger.misc.info("尝试注入")
+		}
 		
 		if !_options.experiment_replaceSubstrateWithEllekit {
 			guard !_urls.isEmpty else { return }
@@ -65,7 +71,9 @@ class TweakHandler {
 			case "deb":
 				try await _handleDeb(at: url, baseTmpDir: baseTmpDir)
 			default:
-				Logger.misc.warning("不支持的文件类型: \(url.lastPathComponent)，跳过。")
+				Task { @MainActor in
+					Logger.misc.warning("不支持的文件类型: \(url.lastPathComponent)，跳过。")
+				}
 			}
 		}
 		
@@ -90,7 +98,9 @@ class TweakHandler {
 				let destinationURL = _app.appendingPathComponent(url.lastPathComponent)
 				try _fileManager.moveFileIfNeeded(from: url, to: destinationURL)
 			default:
-				Logger.misc.warning("不支持的文件类型: \(url.lastPathComponent)，跳过。")
+				Task { @MainActor in
+					Logger.misc.warning("不支持的文件类型: \(url.lastPathComponent)，跳过。")
+				}
 			}
 		}
 	}
@@ -191,7 +201,9 @@ class TweakHandler {
 					let directoryURL = baseURL.appendingPathComponent(path)
 					
 					guard _fileManager.fileExists(atPath: directoryURL.path) else {
-						Logger.misc.warning("目录不存在: \(directoryURL.path)。跳过。")
+						Task { @MainActor in
+							Logger.misc.warning("目录不存在: \(directoryURL.path)。跳过。")
+						}
 						continue
 					}
 					

@@ -11,7 +11,7 @@ final class ZsignHandler {
 	
 	init(
 		appUrl: URL,
-		options: Options = OptionsManager.shared.options,
+		options: Options = Options.defaultOptions,
 		cert: CertificatePair? = nil
 	) {
 		self._appUrl = appUrl

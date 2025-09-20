@@ -18,7 +18,9 @@ class CertificateReader: NSObject {
 			let fileData = try Data(contentsOf: file)
 			
 			guard let xmlRange = fileData.range(of: Data("<?xml".utf8)) else {
-				Logger.misc.error("未找到XML开始标记")
+				Task { @MainActor in
+					Logger.misc.error("未找到XML开始标记")
+				}
 				return nil
 			}
 			
@@ -28,7 +30,9 @@ class CertificateReader: NSObject {
 			let data = try decoder.decode(Certificate.self, from: xmlData)
 			return data
 		} catch {
-			Logger.misc.error("提取证书时出错: \(error.localizedDescription)")
+			Task { @MainActor in
+				Logger.misc.error("提取证书时出错: \(error.localizedDescription)")
+			}
 			return nil
 		}
 	}

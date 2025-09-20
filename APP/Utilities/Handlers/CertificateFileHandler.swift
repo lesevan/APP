@@ -43,7 +43,6 @@ final class CertificateFileHandler: NSObject {
 	}
 	
 	func addToDatabase() async throws {
-		
 		Storage.shared.addCertificate(
 			uuid: _uuid,
 			password: _keyPassword,
@@ -51,7 +50,7 @@ final class CertificateFileHandler: NSObject {
 			ppq: _certPair?.PPQCheck ?? false,
 			expiration: _certPair?.ExpirationDate ?? Date()
 		) { _ in
-			Logger.misc.info("[\(self._uuid)] 已添加到数据库")
+			print("[\(self._uuid)] 已添加到数据库")
 		}
 	}
 	

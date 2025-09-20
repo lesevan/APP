@@ -1,10 +1,14 @@
 import Foundation
 import UIKit
+import os.log
+
+@MainActor
 class OptionsManager: ObservableObject {
 	static let shared = OptionsManager()
 	
 	@Published var options: Options
 	private let _key = "signing_options"
+	private let logger = Logger(subsystem: "com.feather.options", category: "OptionsManager")
 	
 	init() {
 		if
@@ -12,22 +16,29 @@ class OptionsManager: ObservableObject {
 			let savedOptions = try? JSONDecoder().decode(Options.self, from: data)
 		{
 			self.options = savedOptions
+			logger.info("Loaded saved options from UserDefaults")
 		} else {
 			self.options = Options.defaultOptions
 			self.saveOptions()
+			logger.info("Using default options")
 		}
 	}
 	
 	func saveOptions() {
-		if let encoded = try? JSONEncoder().encode(options) {
+		do {
+			let encoded = try JSONEncoder().encode(options)
 			UserDefaults.standard.set(encoded, forKey: _key)
 			objectWillChange.send()
+			logger.info("Options saved successfully")
+		} catch {
+			logger.error("Failed to save options: \(error.localizedDescription)")
 		}
 	}
 	
 	func resetToDefaults() {
 		options = Options.defaultOptions
 		saveOptions()
+		logger.info("Options reset to defaults")
 	}
 }
 
@@ -68,7 +79,7 @@ struct Options: Codable, Equatable {
 		injectPath: .executable_path,
 		injectFolder: .frameworks,
 		ppqString: randomString(),
-		ppqProtection: false,
+		ppqProtection: true,
 		dynamicProtection: false,
 		identifiers: [:],
 		displayNames: [:],

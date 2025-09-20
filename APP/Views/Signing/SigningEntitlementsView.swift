@@ -35,15 +35,15 @@ struct SigningEntitlementsView: View {
 		.sheet(isPresented: $_isAddingPresenting) {
 			FileImporterRepresentableView(
 				allowedContentTypes:  [.xmlPropertyList, .entitlements],
-				onResult: { result in
+				onDocumentsPicked: { urls in
 					DispatchQueue.main.async { _isAddingPresenting = false }
-					switch result {
-					case .success(let selectedFileURL):
-						FileManager.default.moveAndStore(selectedFileURL, with: "FeatherEntitlement") { url in
-							DispatchQueue.main.async { bindingValue = url }
+					guard let selectedFileURL = urls.first else { return }
+					print("开始处理权限文件: \(selectedFileURL.lastPathComponent)")
+					FileManager.default.moveAndStore(selectedFileURL, with: "FeatherEntitlement") { url in
+						DispatchQueue.main.async { 
+							bindingValue = url
+							print("权限文件导入成功: \(url.lastPathComponent)")
 						}
-					case .failure(let error):
-						print("Failed to import entitlements file: \(error)")
 					}
 				}
 			)

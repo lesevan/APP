@@ -8,7 +8,8 @@ import Foundation
 import SwiftUI
 
 /// 搜索历史管理器
-class SearchHistoryManager: ObservableObject {
+@MainActor
+class SearchHistoryManager: ObservableObject, @unchecked Sendable {
     static let shared = SearchHistoryManager()
     @Published var searchHistory: [iTunesClient.SearchHistoryItem] = []
     private let maxHistoryCount = 20
@@ -66,7 +67,8 @@ class SearchHistoryManager: ObservableObject {
 }
 
 /// 用于处理应用搜索和查找操作的搜索管理器
-class SearchManager: ObservableObject {
+@MainActor
+class SearchManager: ObservableObject, @unchecked Sendable {
     static let shared = SearchManager()
     private var itunesClient: iTunesClient {
         return iTunesClient.shared

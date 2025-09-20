@@ -10,7 +10,8 @@ import Foundation
 import Network
 import Combine
 
-class NetworkStateChecker: ObservableObject {
+@MainActor
+class NetworkStateChecker: ObservableObject, @unchecked Sendable {
     static let shared = NetworkStateChecker()
     
     @Published var isConnected = false

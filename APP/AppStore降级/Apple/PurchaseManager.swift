@@ -8,7 +8,8 @@ import Foundation
 // MARK: - 缺失类型的类型别名
 // 使用来自 Apple.swift 的 Account 类型
 /// 处理应用内购买和许可证管理的购买管理器
-class PurchaseManager {
+@MainActor
+class PurchaseManager: @unchecked Sendable {
     static let shared = PurchaseManager()
     // 使用特定的客户端实现以避免歧义
     private let searchManager = SearchManager.shared

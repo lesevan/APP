@@ -1,10 +1,13 @@
 import CoreData
+import os.log
 
-final class Storage: ObservableObject {
+final class Storage: ObservableObject, @unchecked Sendable {
 	static let shared = Storage()
 	let container: NSPersistentContainer
 	
 	private let _name: String = "Feather"
+	private let saveQueue = DispatchQueue(label: "com.feather.storage.save", qos: .userInitiated)
+	private let logger = Logger(subsystem: "com.feather.storage", category: "Storage")
 	
 	init(inMemory: Bool = false) {
 		container = NSPersistentContainer(name: _name)
@@ -34,13 +37,26 @@ final class Storage: ObservableObject {
 		}
 	}
 	
+	@MainActor
 	func clearContext<T: NSManagedObject>(request: NSFetchRequest<T>) {
-		let deleteRequest = NSBatchDeleteRequest(fetchRequest: (request as? NSFetchRequest<NSFetchRequestResult>)!)
-		_ = try? context.execute(deleteRequest)
+		do {
+			let deleteRequest = NSBatchDeleteRequest(fetchRequest: request as! NSFetchRequest<NSFetchRequestResult>)
+			try context.execute(deleteRequest)
+			logger.info("Successfully cleared context for \(T.self)")
+		} catch {
+			logger.error("Failed to clear context for \(T.self): \(error.localizedDescription)")
+		}
 	}
 	
+	@MainActor
 	func countContent<T: NSManagedObject>(for type: T.Type) -> String {
 		let request = T.fetchRequest()
-		return "\((try? context.count(for: request)) ?? 0)"
+		do {
+			let count = try context.count(for: request)
+			return "\(count)"
+		} catch {
+			logger.error("Failed to count content for \(type): \(error.localizedDescription)")
+			return "0"
+		}
 	}
 }

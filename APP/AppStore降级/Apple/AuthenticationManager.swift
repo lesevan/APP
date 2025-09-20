@@ -7,7 +7,8 @@
 import Foundation
 import Security
 /// 用于处理用户凭证和会话管理的认证管理器
-class AuthenticationManager {
+@MainActor
+class AuthenticationManager: @unchecked Sendable {
     static let shared = AuthenticationManager()
     private let keychainService = "ipatool.swift.service"
     private let keychainAccount = "account"

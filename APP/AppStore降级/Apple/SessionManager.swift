@@ -11,7 +11,7 @@ import SwiftUI
 
 /// Apple ID会话管理器 - 处理掉线检测和自动重连
 @MainActor
-class SessionManager: ObservableObject {
+class SessionManager: ObservableObject, @unchecked Sendable {
     static let shared = SessionManager()
     
     @Published var isSessionValid = true
@@ -30,9 +30,6 @@ class SessionManager: ObservableObject {
     }
     
     deinit {
-        Task { @MainActor in
-            stopSessionMonitoring()
-        }
     }
     
     // MARK: - 会话监控
@@ -48,6 +45,7 @@ class SessionManager: ObservableObject {
     }
     
     /// 停止会话监控
+    @MainActor
     func stopSessionMonitoring() {
         print("🔐 [SessionManager] 停止会话监控")
         sessionTimer?.invalidate()

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct APIService {
+public struct APIService: @unchecked Sendable {
     let baseURL = "https://itunes.apple.com/"
     
     public static let shared = APIService()
@@ -70,7 +70,7 @@ public struct APIService {
     
     public func POST<T: Codable>(endpoint: Endpoint,
                          params: [String: String]?,
-                         completionHandler: @escaping (Result<T, APIError>) -> Void) {
+                         completionHandler: @escaping @Sendable (Result<T, APIError>) -> Void) {
         let queryURL = endpoint.url()
         guard let url = URL(string: queryURL) else {
             debugPrint("error url: \(queryURL)")
@@ -104,13 +104,12 @@ public struct APIService {
                 }
                 return
             }
-            do {
-                let object = try self.decoder.decode(T.self, from: data)
-                DispatchQueue.main.async {
+            DispatchQueue.main.async {
+                do {
+                    let decoder = JSONDecoder()
+                    let object = try decoder.decode(T.self, from: data)
                     completionHandler(.success(object))
-                }
-            } catch let error {
-                DispatchQueue.main.async {
+                } catch let error {
                     #if DEBUG
                     print("JSON Decoding Error: \(error)")
                     #endif
@@ -124,7 +123,7 @@ public struct APIService {
     
     public func GET_JSON(endpoint: Endpoint,
                          params: [String: String]?,
-                    completionHandler: @escaping (Result<Dictionary<String, Any>, APIError>) -> Void) {
+                    completionHandler: @escaping @Sendable (Result<Dictionary<String, Any>, APIError>) -> Void) {
         let queryURL = endpoint.url()
         var components = URLComponents(url: URL(string: queryURL)!, resolvingAgainstBaseURL: true)!
         if let params = params {

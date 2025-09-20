@@ -1,6 +1,7 @@
 import CoreData
 import UIKit.UIImpactFeedbackGenerator
 extension Storage {
+	@MainActor
 	func addImported(
 		uuid: String,
 		source: URL? = nil,

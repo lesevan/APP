@@ -3,7 +3,8 @@ import Vapor
 import NIOSSL
 import NIOTLS
 import SwiftUI
-class ServerInstaller: Identifiable, ObservableObject {
+import IDeviceSwift
+class ServerInstaller: Identifiable, ObservableObject, @unchecked Sendable {
 	let id = UUID()
 	let port = Int.random(in: 4000...8000)
 	private var _needsShutdown = false
@@ -13,28 +14,21 @@ class ServerInstaller: Identifiable, ObservableObject {
 	@ObservedObject var viewModel: InstallerStatusViewModel
 	private var _server: Application?
 
-	init(app: AppInfoPresentable, viewModel: InstallerStatusViewModel) {
+	init(app: AppInfoPresentable, viewModel: InstallerStatusViewModel) throws {
 		self.app = app
 		self.viewModel = viewModel
-		// 延迟初始化服务器
-		Task {
-			do {
-				try await _setup()
-				try _configureRoutes()
-				try _server?.server.start()
-				_needsShutdown = true
-			} catch {
-				print("ServerInstaller 初始化失败: \(error)")
-			}
-		}
+		try _setup()
+		try _configureRoutes()
+		try _server?.server.start()
+		_needsShutdown = true
 	}
 	
 	deinit {
 		_shutdownServer()
 	}
 	
-	private func _setup() async throws {
-		self._server = try? await setupApp(port: port)
+	private func _setup() throws {
+		self._server = try setupApp(port: port)
 	}
 		
 	private func _configureRoutes() throws {
@@ -61,14 +55,12 @@ class ServerInstaller: Identifiable, ObservableObject {
 				
 				await self._updateStatus(.sendingPayload)
 				
-				do {
-					let response = try await req.fileio.asyncStreamFile(at: packageUrl.path)
+				return req.fileio.streamFile(
+					at: packageUrl.path
+				) { result in
 					Task {
-						await self._updateStatus(.completed)
+						await self._updateStatus(.completed(result))
 					}
-					return response
-				} catch {
-					return Response(status: .internalServerError)
 				}
 			case "/install":
 				var headers = HTTPHeaders()
@@ -103,7 +95,9 @@ class ServerInstaller: Identifiable, ObservableObject {
 	
 	func install(at packageUrl: URL, suspend: Bool) async throws {
 		self.packageUrl = packageUrl
-		_updateStatus(.ready)
+		await MainActor.run {
+			_updateStatus(.ready)
+		}
 		// 服务器已经在初始化时启动，这里只需要设置包URL
 	}
 }

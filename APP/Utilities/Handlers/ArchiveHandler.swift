@@ -2,8 +2,9 @@ import Foundation
 import UIKit.UIApplication
 import ZIPFoundation
 import SwiftUI
+import IDeviceSwift
 
-final class ArchiveHandler: NSObject {
+final class ArchiveHandler: NSObject, @unchecked Sendable {
 	@ObservedObject var viewModel: InstallerStatusViewModel
 	
 	private let _fileManager = FileManager.default
@@ -13,6 +14,7 @@ final class ArchiveHandler: NSObject {
 	private var _app: AppInfoPresentable
 	private let _uniqueWorkDir: URL
 	
+	@MainActor
 	init(app: AppInfoPresentable, viewModel: InstallerStatusViewModel) {
 		self.viewModel = viewModel
 		self._app = app
@@ -23,7 +25,7 @@ final class ArchiveHandler: NSObject {
 	}
 	
 	func move() async throws {
-		guard let appUrl = Storage.shared.getAppDirectory(for: _app) else {
+		guard let appUrl = await Storage.shared.getAppDirectory(for: _app) else {
 			throw SigningFileHandlerError.appNotFound
 		}
 		

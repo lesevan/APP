@@ -20,7 +20,8 @@ import ZsignSwift
 #endif
 
 // 全局安装状态管理
-class GlobalInstallationManager: ObservableObject {
+@MainActor
+class GlobalInstallationManager: ObservableObject, @unchecked Sendable {
     static let shared = GlobalInstallationManager()
     @Published var isAnyInstalling = false
     @Published var currentInstallingRequestId: UUID? = nil
@@ -41,7 +42,8 @@ class GlobalInstallationManager: ObservableObject {
 }
 
 // HTTP服务器管理器
-class HTTPServerManager: ObservableObject {
+@MainActor
+class HTTPServerManager: ObservableObject, @unchecked Sendable {
     static let shared = HTTPServerManager()
     private var activeServers: [UUID: SimpleHTTPServer] = [:]
     
@@ -215,7 +217,7 @@ struct CORSMiddleware: Middleware {
 
 // MARK: - HTTP功能器
 #if canImport(Vapor)
-class SimpleHTTPServer: NSObject {
+class SimpleHTTPServer: NSObject, @unchecked Sendable {
     public let port: Int
     private let ipaPath: String
     private let appInfo: AppInfo
@@ -256,7 +258,7 @@ class SimpleHTTPServer: NSObject {
         requestLocalNetworkPermission { [weak self] granted in
             if granted {
                 self?.serverQueue.async { [weak self] in
-                    Task {
+                    Task { @MainActor in
                         await self?.startSimpleServer()
                     }
                 }
@@ -264,7 +266,7 @@ class SimpleHTTPServer: NSObject {
         }
     }
     
-    private func requestLocalNetworkPermission(completion: @escaping (Bool) -> Void) {
+    private func requestLocalNetworkPermission(completion: @escaping @Sendable (Bool) -> Void) {
         // 创建网络监听器来触发权限对话框
         let monitor = NWPathMonitor()
         let queue = DispatchQueue(label: "NetworkPermission")
@@ -1785,68 +1787,56 @@ struct DownloadCardView: SwiftUIView {
     private func performAdhocSigning(ipaPath: String, appInfo: AppInfo) async throws {
         
         #if canImport(ZsignSwift)
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                try await withCheckedThrowingContinuation { continuation in
-                    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-                    defer {
-                        try? FileManager.default.removeItem(at: tempDir)
-                    }
-                    
-                    do {
-                        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-                        
-                        #if canImport(ZipArchive)
-                        let unzipSuccess = SSZipArchive.unzipFile(atPath: ipaPath, toDestination: tempDir.path)
-                        guard unzipSuccess else {
-                            throw PackageInstallationError.installationFailed("IPA文件解压失败")
-                        }
-                        #else
-                        throw PackageInstallationError.installationFailed("需要ZipArchive库")
-                        #endif
-                        
-                        let payloadDir = tempDir.appendingPathComponent("Payload")
-                        let payloadContents = try FileManager.default.contentsOfDirectory(at: payloadDir, includingPropertiesForKeys: nil)
-                        
-                        guard let appBundle = payloadContents.first(where: { $0.pathExtension == "app" }) else {
-                            throw PackageInstallationError.installationFailed("未找到.app文件")
-                        }
-                        
-                        let appPath = appBundle.path
-                        let success = Zsign.sign(
-                            appPath: appPath,
-                            entitlementsPath: "",
-                            customIdentifier: appInfo.bundleIdentifier,
-                            customName: appInfo.name,
-                            customVersion: appInfo.version,
-                            adhoc: true,
-                            removeProvision: true,
-                            completion: { _, error in
-                                if let error = error {
-                                    continuation.resume(throwing: PackageInstallationError.installationFailed("签名失败: \(error.localizedDescription)"))
-                                } else {
-                                    continuation.resume()
-                                }
-                            }
-                        )
-                        
-                        if !success {
-                            continuation.resume(throwing: PackageInstallationError.installationFailed("签名过程启动失败"))
-                        }
-                        
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer {
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+            
+            do {
+                try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+                
+                #if canImport(ZipArchive)
+                let unzipSuccess = SSZipArchive.unzipFile(atPath: ipaPath, toDestination: tempDir.path)
+                guard unzipSuccess else {
+                    throw PackageInstallationError.installationFailed("IPA文件解压失败")
                 }
+                #else
+                throw PackageInstallationError.installationFailed("需要ZipArchive库")
+                #endif
+                
+                let payloadDir = tempDir.appendingPathComponent("Payload")
+                let payloadContents = try FileManager.default.contentsOfDirectory(at: payloadDir, includingPropertiesForKeys: nil)
+                
+                guard let appBundle = payloadContents.first(where: { $0.pathExtension == "app" }) else {
+                    throw PackageInstallationError.installationFailed("未找到.app文件")
+                }
+                
+                let appPath = appBundle.path
+                let success = Zsign.sign(
+                    appPath: appPath,
+                    entitlementsPath: "",
+                    customIdentifier: appInfo.bundleIdentifier,
+                    customName: appInfo.name,
+                    customVersion: appInfo.version,
+                    adhoc: true,
+                    removeProvision: true,
+                    completion: { _, error in
+                        if let error = error {
+                            continuation.resume(throwing: PackageInstallationError.installationFailed("签名失败: \(error.localizedDescription)"))
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                )
+                
+                if !success {
+                    continuation.resume(throwing: PackageInstallationError.installationFailed("签名过程启动失败"))
+                }
+                
+            } catch {
+                continuation.resume(throwing: error)
             }
-            
-            group.addTask {
-                try await Task.sleep(nanoseconds: 30_000_000_000)
-                throw PackageInstallationError.timeoutError
-            }
-            
-            try await group.next()
-            group.cancelAll()
         }
         #else
         throw PackageInstallationError.installationFailed("ZsignSwift库不可用")

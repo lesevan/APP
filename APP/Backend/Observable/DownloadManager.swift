@@ -3,7 +3,8 @@ import Combine
 import UIKit.UIImpactFeedbackGenerator
 import OSLog
 
-class Download: Identifiable, @unchecked Sendable {
+@MainActor
+class Download: Identifiable, ObservableObject {
 	@Published var progress: Double = 0.0
 	@Published var bytesDownloaded: Int64 = 0
 	@Published var totalBytes: Int64 = 0
@@ -33,12 +34,19 @@ class Download: Identifiable, @unchecked Sendable {
 		self.onlyArchiving = onlyArchiving
         self.fileName = url.lastPathComponent
     }
+	
+	deinit {
+		// 确保在对象释放时取消任务
+		task?.cancel()
+	}
 }
 
-class DownloadManager: NSObject, ObservableObject {
+class DownloadManager: NSObject, ObservableObject, @unchecked Sendable {
 	static let shared = DownloadManager()
 	
     @Published var downloads: [Download] = []
+	private let downloadsQueue = DispatchQueue(label: "com.feather.downloads", qos: .userInitiated)
+	private let logger = Logger(subsystem: "com.feather.downloads", category: "DownloadManager")
 	
 	var manualDownloads: [Download] {
 		downloads.filter { isManualDownload($0.id) }
@@ -52,6 +60,7 @@ class DownloadManager: NSObject, ObservableObject {
         _session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }
     
+    @MainActor
     func startDownload(
 		from url: URL,
 		id: String = UUID().uuidString
@@ -68,35 +77,43 @@ class DownloadManager: NSObject, ObservableObject {
         task.resume()
         
         downloads.append(download)
+        logger.info("Started download for URL: \(url.absoluteString)")
         return download
     }
 	
+    @MainActor
 	func startArchive(
 		from url: URL,
 		id: String = UUID().uuidString
 	) -> Download {
 		let download = Download(id: id, url: url, onlyArchiving: true)
 		downloads.append(download)
+		logger.info("Started archive for URL: \(url.absoluteString)")
 		return download
 	}
     
+    @MainActor
     func resumeDownload(_ download: Download) {
         if let resumeData = download.resumeData {
             let task = _session.downloadTask(withResumeData: resumeData)
             download.task = task
             task.resume()
+            logger.info("Resumed download with resume data for ID: \(download.id)")
         } else if let url = download.task?.originalRequest?.url {
             let task = _session.downloadTask(with: url)
             download.task = task
             task.resume()
+            logger.info("Resumed download for URL: \(url.absoluteString)")
         }
     }
     
+    @MainActor
     func cancelDownload(_ download: Download) {
         download.task?.cancel()
         
         if let index = downloads.firstIndex(where: { $0.id == download.id }) {
             downloads.remove(at: index)
+            logger.info("Cancelled and removed download for ID: \(download.id)")
         }
     }
     
@@ -104,14 +121,17 @@ class DownloadManager: NSObject, ObservableObject {
 		return string.contains("FeatherManualDownload")
 	}
 	
+    @MainActor
 	func getDownload(by id: String) -> Download? {
 		return downloads.first(where: { $0.id == id })
 	}
 	
+    @MainActor
 	func getDownloadIndex(by id: String) -> Int? {
 		return downloads.firstIndex(where: { $0.id == id })
 	}
 	
+    @MainActor
 	func getDownloadTask(by task: URLSessionDownloadTask) -> Download? {
 		return downloads.first(where: { $0.task == task })
 	}
@@ -120,49 +140,53 @@ class DownloadManager: NSObject, ObservableObject {
 extension DownloadManager: URLSessionDownloadDelegate {
 	
 	func handlePachageFile(url: URL, dl: Download) throws {
-		Logger.misc.info("DownloadManager.handlePachageFile 调用: \(url.path)")
-		FR.handlePackageFile(url, download: dl) { err in
-			if let err = err {
-				Logger.misc.error("DownloadManager IPA处理失败: \(err.localizedDescription)")
-				let generator = UINotificationFeedbackGenerator()
-				generator.notificationOccurred(.error)
-			} else {
-				Logger.misc.info("DownloadManager IPA处理成功完成")
-			}
-			
-			DispatchQueue.main.async {
-				if let index = DownloadManager.shared.getDownloadIndex(by: dl.id) {
-					DownloadManager.shared.downloads.remove(at: index)
+		logger.info("DownloadManager.handlePachageFile 调用: \(url.path)")
+		FR.handlePackageFile(url, download: dl) { [weak self] err in
+			Task { @MainActor in
+				guard let self = self else { return }
+				
+				if let err = err {
+					self.logger.error("DownloadManager IPA处理失败: \(err.localizedDescription)")
+					let generator = UINotificationFeedbackGenerator()
+					generator.notificationOccurred(.error)
+				} else {
+					self.logger.info("DownloadManager IPA处理成功完成")
+				}
+				
+				if let index = self.getDownloadIndex(by: dl.id) {
+					self.downloads.remove(at: index)
 				}
 			}
 		}
 	}
 	
 	func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-		guard let download = getDownloadTask(by: downloadTask) else { return }
-		
-		let tempDirectory = FileManager.default.temporaryDirectory
-		let customTempDir = tempDirectory.appendingPathComponent("FeatherDownloads", isDirectory: true)
-		
-		do {
-			try FileManager.default.createDirectoryIfNeeded(at: customTempDir)
+		Task { @MainActor in
+			guard let download = getDownloadTask(by: downloadTask) else { return }
 			
-			let suggestedFileName = downloadTask.response?.suggestedFilename ?? download.fileName
-			let destinationURL = customTempDir.appendingPathComponent(suggestedFileName)
+			let tempDirectory = FileManager.default.temporaryDirectory
+			let customTempDir = tempDirectory.appendingPathComponent("FeatherDownloads", isDirectory: true)
 			
-			try FileManager.default.removeFileIfNeeded(at: destinationURL)
-			try FileManager.default.moveItem(at: location, to: destinationURL)
-			
-			try handlePachageFile(url: destinationURL, dl: download)
-		} catch {
-			print("处理下载文件时出错: \(error.localizedDescription)")
+			do {
+				try FileManager.default.createDirectoryIfNeeded(at: customTempDir)
+				
+				let suggestedFileName = downloadTask.response?.suggestedFilename ?? download.fileName
+				let destinationURL = customTempDir.appendingPathComponent(suggestedFileName)
+				
+				try FileManager.default.removeFileIfNeeded(at: destinationURL)
+				try FileManager.default.moveItem(at: location, to: destinationURL)
+				
+				try handlePachageFile(url: destinationURL, dl: download)
+			} catch {
+				logger.error("处理下载文件时出错: \(error.localizedDescription)")
+			}
 		}
 	}
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        guard let download = getDownloadTask(by: downloadTask) else { return }
-        
-        DispatchQueue.main.async {
+        Task { @MainActor in
+            guard let download = getDownloadTask(by: downloadTask) else { return }
+            
             download.progress = totalBytesExpectedToWrite > 0
 			? Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
 			: 0
@@ -172,17 +196,17 @@ extension DownloadManager: URLSessionDownloadDelegate {
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard
-			let _ = error,
-			let downloadTask = task as? URLSessionDownloadTask,
-			let download = getDownloadTask(by: downloadTask)
-		else {
+        guard let _ = error,
+			let downloadTask = task as? URLSessionDownloadTask else {
 			return
 		}
 		
-		DispatchQueue.main.async {
-			if let index = self.getDownloadIndex(by: download.id) {
-				self.downloads.remove(at: index)
+		Task { @MainActor in
+			guard let download = getDownloadTask(by: downloadTask) else { return }
+			
+			if let index = getDownloadIndex(by: download.id) {
+				downloads.remove(at: index)
+				logger.info("Removed failed download for ID: \(download.id)")
 			}
 		}
     }

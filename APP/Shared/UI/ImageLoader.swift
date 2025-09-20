@@ -49,6 +49,7 @@ struct ImageLoaderView<Placeholder: View, ConfiguredImage: View>: View {
     }
 }
 
+@MainActor
 class ImageLoaderService: ObservableObject {
     @Published var image = UIImage()
     
@@ -79,9 +80,11 @@ class ImageLoaderService: ObservableObject {
             .sink(receiveCompletion: NetworkingManager.handleCompletion, receiveValue: { [weak self] (returnedImage) in
                 guard let self = self, let downloadedImage = returnedImage else { return }
                 
-                self.image = downloadedImage
-                self.imageSubscription?.cancel()
-                self.fileManager.saveImage(image: downloadedImage, imageName: self.url.path.md5, folderName: self.folderName)
+                Task { @MainActor in
+                    self.image = downloadedImage
+                    self.imageSubscription?.cancel()
+                    self.fileManager.saveImage(image: downloadedImage, imageName: self.url.path.md5, folderName: self.folderName)
+                }
             })
     }
 }

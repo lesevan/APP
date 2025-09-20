@@ -25,7 +25,9 @@ final class AppFileHandler: NSObject, @unchecked Sendable {
             .appendingPathComponent("FeatherImport_\(_uuid)", isDirectory: true)
         
         super.init()
-        Logger.misc.debug("已导入: \(self._ipa.lastPathComponent) ID: \(self._uuid)")
+        Task { @MainActor in
+            Logger.misc.debug("已导入: \(self._ipa.lastPathComponent) ID: \(self._uuid)")
+        }
     }
     
     // 避免与 NSObject.copy 冲突，使用 performCopy
@@ -111,7 +113,9 @@ final class AppFileHandler: NSObject, @unchecked Sendable {
             throw ImportedFileHandlerError.payloadNotFound
         }
         try _fileManager.moveItem(at: payloadURL, to: destinationURL)
-        Logger.misc.info("[\(self._uuid)] 已移动Payload到: \(destinationURL.path)")
+        Task { @MainActor in
+            Logger.misc.info("[\(self._uuid)] 已移动Payload到: \(destinationURL.path)")
+        }
         try? _fileManager.removeItem(at: _uniqueWorkDir)
     }
     
@@ -125,15 +129,17 @@ final class AppFileHandler: NSObject, @unchecked Sendable {
         let bundle = Bundle(url: appUrl)
         
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            Storage.shared.addImported(
-                uuid: _uuid,
-                appName: bundle?.name,
-                appIdentifier: bundle?.bundleIdentifier,
-                appVersion: bundle?.version,
-                appIcon: bundle?.iconFileName
-            ) { _ in
-                Logger.misc.info("[\(self._uuid)] 已添加到数据库")
-                continuation.resume()
+            Task { @MainActor in
+                Storage.shared.addImported(
+                    uuid: _uuid,
+                    appName: bundle?.name,
+                    appIdentifier: bundle?.bundleIdentifier,
+                    appVersion: bundle?.version,
+                    appIcon: bundle?.iconFileName
+                ) { _ in
+                    Logger.misc.info("[\(self._uuid)] 已添加到数据库")
+                    continuation.resume()
+                }
             }
         }
     }

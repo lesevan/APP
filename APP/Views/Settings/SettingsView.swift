@@ -27,37 +27,24 @@ struct SettingsView: View {
 }
 
 extension SettingsView {
-    
-    // MARK: - 高级功能区域
     private var advancedFeaturesSection: some View {
         Section {
-            Toggle(isOn: $optionsManager.options.experiment_supportLiquidGlass) {
-                Label {
-                    Text("切换:液态玻璃UI")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                } icon: {
-                    Image(systemName: "26.circle.fill")
-                        .foregroundColor(.blue)
-                        .font(.title2)
-                }
+            NavigationLink(destination: CertificatesView()) {
+                Label("证书管理", systemImage: "checkmark.seal")
             }
-            .toggleStyle(SwitchToggleStyle(tint: .blue))
+            NavigationLink(destination: ConfigurationView()) {
+                Label("签名配置", systemImage: "signature")
+            }
+            NavigationLink(destination: ArchiveView()) {
+                Label("归档设置", systemImage: "archivebox")
+            }
+            NavigationLink(destination: InstallationView()) {
+                Label("安装选项", systemImage: "arrow.down.circle")
+            }
         } header: {
-            HStack {
-                Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
-                Text("高级功能")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-            }
+            Text("高级功能")
         } footer: {
-            Text("iOS26系统,引入的新液态玻璃!遇到问题,联系作者pxx917144686")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .onChange(of: optionsManager.options.experiment_supportLiquidGlass) { _ in
-            optionsManager.saveOptions()
+            Text("管理证书、配置签名选项和安装设置。")
         }
     }
     
@@ -100,6 +87,7 @@ extension SettingsView {
             Text("重置应用的源、证书、应用程序和设置。")
         }
     }
+    
 
     @ViewBuilder
     private func _feedback() -> some View {

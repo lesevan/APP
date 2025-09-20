@@ -8,7 +8,8 @@
 import Foundation
 import UIKit
 
-class LocalFileManager {
+@MainActor
+class LocalFileManager: @unchecked Sendable {
     static let instance = LocalFileManager()
     
     private init() {}

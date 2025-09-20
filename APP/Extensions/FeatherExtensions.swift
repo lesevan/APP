@@ -2,30 +2,6 @@ import Foundation
 import UIKit
 import SwiftUI
 
-public extension FileManager {
-    func isFileFromFileProvider(at url: URL) -> Bool {
-        if let resourceValues = try? url.resourceValues(forKeys: [.isUbiquitousItemKey, .fileResourceIdentifierKey]),
-           resourceValues.isUbiquitousItem == true {
-            return true
-        }
-        
-        let path = url.path
-        if path.contains("/Library/CloudStorage/") || path.contains("/File Provider Storage/") {
-            return true
-        }
-        
-        return false
-    }
-    
-    func decodeAndWrite(base64: String, pathComponent: String) -> URL? {
-        let raw = base64.replacingOccurrences(of: " ", with: "+")
-        guard let data = Data(base64Encoded: raw) else { return nil }
-        let dir = self.temporaryDirectory.appendingPathComponent(UUID().uuidString + pathComponent)
-        try? data.write(to: dir)
-        return dir
-    }
-}
-
 public extension URL {
     func validatedScheme(after marker: String) -> String? {
         guard let range = absoluteString.range(of: marker) else { return nil }

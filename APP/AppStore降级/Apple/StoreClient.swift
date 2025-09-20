@@ -91,7 +91,8 @@ struct ExtendedSearchResult: Codable {
 }
 
 // MARK: - 商店客户端实现
-class StoreClient {
+@MainActor
+class StoreClient: @unchecked Sendable {
     static let shared = StoreClient()
     private init() {}
     func searchApps(

@@ -41,14 +41,10 @@ struct TunnelView: View {
 		.sheet(isPresented: $_isImportingPairingPresenting) {
 			FileImporterRepresentableView(
 				allowedContentTypes:  [.xmlPropertyList],
-				onResult: { result in
-					switch result {
-					case .success(let selectedFileURL):
-						FR.movePairing(selectedFileURL)
-						doesHavePairingFile = true
-					case .failure(let error):
-						print("Failed to import pairing file: \(error)")
-					}
+				onDocumentsPicked: { urls in
+					guard let selectedFileURL = urls.first else { return }
+					FR.movePairing(selectedFileURL)
+					doesHavePairingFile = true
 				}
 			)
 			.ignoresSafeArea()

@@ -80,9 +80,8 @@ extension ServerView {
 }
 
 struct ServerView: View {
-    // 强制仅使用本地地址：移除开关，常量为 true
-    @AppStorage("Feather.ipFix") private var _ipFix: Bool = true
-	@AppStorage("Feather.serverMethod") private var _serverMethod: Int = 1
+	@AppStorage("Feather.ipFix") private var _ipFix: Bool = false
+	@AppStorage("Feather.serverMethod") private var _serverMethod: Int = 0
 	private let _serverMethods: [String] = ["完全本地", "半本地"]
 	
 	private let _dataService = NBFetchService()
@@ -96,14 +95,24 @@ struct ServerView: View {
 						Text(_serverMethods[index]).tag(index)
 					}
 				}
-                // 移除“仅使用本地地址”开关，固定启用
-                HStack {
-                    Label("仅使用本地地址", systemImage: "lifepreserver")
-                    Spacer()
-                    Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-                }
+				Toggle("仅使用本地地址", systemImage: "lifepreserver", isOn: $_ipFix)
+					.disabled(_serverMethod != 1)
 			}
 			
+			Section {
+				Button("更新SSL证书", systemImage: "arrow.down.doc") {
+					FR.downloadSSLCertificates(from: _serverPackUrl) { success in
+						if !success {
+							DispatchQueue.main.async {
+								UIAlertController.showAlertWithOk(
+									title: "SSL证书",
+									message: "下载失败，请检查网络连接后重试。"
+								)
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }

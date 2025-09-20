@@ -3,27 +3,21 @@ import Foundation
 
 // MARK: - Modern Text Field Style
 struct ModernTextFieldStyle: TextFieldStyle {
-    let themeManager: ThemeManager
-    
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(themeManager.selectedTheme == .dark ? 
-                          ModernDarkColors.surfacePrimary : 
-                          Color.gray.opacity(0.1))
+                    .fill(Color.gray.opacity(0.1))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(themeManager.selectedTheme == .dark ? 
-                                   ModernDarkColors.borderPrimary : 
-                                   Color.gray.opacity(0.3), lineWidth: 1)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     )
             )
-            .foregroundColor(themeManager.selectedTheme == .dark ? .white : .black)
-            .accentColor(themeManager.accentColor)
+            .foregroundColor(.primary)
     }
 }
+@MainActor
 struct AddAccountView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var vm: AppStore
@@ -84,7 +78,7 @@ struct AddAccountView: View {
                                     .font(.headline)
                                     .foregroundColor(.primary)
                                 TextField("输入您的 Apple ID", text: $email)
-                                    .textFieldStyle(ModernTextFieldStyle(themeManager: themeManager))
+                                    .textFieldStyle(ModernTextFieldStyle())
                                     .keyboardType(.emailAddress)
                                     .autocapitalization(.none)
                                     .disableAutocorrection(true)
@@ -96,7 +90,7 @@ struct AddAccountView: View {
                                     .font(.headline)
                                     .foregroundColor(.primary)
                                 SecureField("输入您的密码", text: $password)
-                                    .textFieldStyle(ModernTextFieldStyle(themeManager: themeManager))
+                                    .textFieldStyle(ModernTextFieldStyle())
                             }
                             
                             // 双重认证码输入框（条件显示）
@@ -106,7 +100,7 @@ struct AddAccountView: View {
                                         .font(.headline)
                                         .foregroundColor(.primary)
                                     TextField("输入6位验证码", text: $code)
-                                        .textFieldStyle(ModernTextFieldStyle(themeManager: themeManager))
+                                        .textFieldStyle(ModernTextFieldStyle())
                                         .keyboardType(.numberPad)
                                         .onChange(of: code) { newValue in
                                             // 限制输入长度为6位

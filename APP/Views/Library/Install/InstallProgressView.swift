@@ -1,5 +1,6 @@
 
 import SwiftUI
+import IDeviceSwift
 
 struct InstallProgressView: View {
 	@State private var _isPulsing = false

@@ -3,11 +3,11 @@
 //  APP
 //
 //  Created by pxx917144686 on 2025/08/20.
-//  从iAppStore-SwiftUI-main项目转移并增强
 //
 
 import Foundation
 
+@MainActor
 class AppFavoritesModel: ObservableObject {
     
     @Published private(set) var favorites: [AppFavorite] {

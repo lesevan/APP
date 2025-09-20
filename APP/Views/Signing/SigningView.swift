@@ -58,18 +58,21 @@ struct SigningView: View {
 			.sheet(isPresented: $_isFilePickerPresenting) {
 				FileImporterRepresentableView(
 					allowedContentTypes:  [.image],
-					onResult: { result in
+					onDocumentsPicked: { urls in
 						DispatchQueue.main.async { _isFilePickerPresenting = false }
-						switch result {
-						case .success(let selectedFileURL):
-							DispatchQueue.main.async {
-								if let imageData = try? Data(contentsOf: selectedFileURL),
-								   let image = UIImage(data: imageData) {
+						guard let selectedFileURL = urls.first else { return }
+						DispatchQueue.main.async {
+							do {
+								let imageData = try Data(contentsOf: selectedFileURL)
+								if let image = UIImage(data: imageData) {
 									self.appIcon = image
+									print("成功导入应用图标: \(selectedFileURL.lastPathComponent)")
+								} else {
+									print("无法从数据创建图像: \(selectedFileURL.lastPathComponent)")
 								}
+							} catch {
+								print("读取图像文件失败: \(error.localizedDescription)")
 							}
-						case .failure(let error):
-							print("Failed to import image: \(error)")
 						}
 					}
 				)
@@ -323,7 +326,9 @@ extension SigningView {
 					_temporaryOptions.post_deleteAppAfterSigned,
 					!app.isSigned
 				{
-					Storage.shared.deleteApp(for: app)
+					Task { @MainActor in
+						Storage.shared.deleteApp(for: app)
+					}
 				}
 				
 				if _temporaryOptions.post_installAppAfterSigned {
