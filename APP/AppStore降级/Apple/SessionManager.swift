@@ -54,8 +54,8 @@ class SessionManager: ObservableObject, @unchecked Sendable {
     
     /// 检查会话有效性
     func checkSessionValidity() async {
-        guard let account = AuthenticationManager.shared.loadSavedAccount() else {
-            print("🔐 [SessionManager] 没有保存的账户，跳过会话检查")
+        guard let account = AppStore.this.selectedAccount else {
+            print("🔐 [SessionManager] 没有当前选中的账户，跳过会话检查")
             return
         }
         
@@ -102,8 +102,8 @@ class SessionManager: ObservableObject, @unchecked Sendable {
     
     /// 尝试重新连接
     private func attemptReconnection() async {
-        guard let account = AuthenticationManager.shared.loadSavedAccount() else {
-            print("🔐 [SessionManager] 没有保存的账户，无法重连")
+        guard let account = AppStore.this.selectedAccount else {
+            print("🔐 [SessionManager] 没有当前选中的账户，无法重连")
             return
         }
         

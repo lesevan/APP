@@ -16,6 +16,7 @@ struct SearchView: SwiftUI.View {
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var appStore: AppStore  // 添加AppStore环境对象
     @StateObject private var regionValidator = RegionValidator.shared
+    @StateObject private var sessionManager = SessionManager.shared
     @State var searching = false
     
     // 视图模式状态 - 改用@State确保实时更新
@@ -436,6 +437,9 @@ struct SearchView: SwiftUI.View {
             loadSearchHistory()
             print("[SearchView] 视图加载完成，开始初始化")
             
+            // 启动Apple ID会话监控
+            sessionManager.startSessionMonitoring()
+            
             // 智能地区检测 - 确保在UI加载后执行
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 print("[SearchView] 执行智能地区检测")
@@ -460,6 +464,10 @@ struct SearchView: SwiftUI.View {
                 print("[SearchView] 强制刷新UI")
                 startAnimations()
             }
+        }
+        .onDisappear {
+            // 停止会话监控以节省资源
+            sessionManager.stopSessionMonitoring()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ForceRefreshUI"))) { _ in
             // 接收强制刷新通知 - 真机适配
@@ -745,27 +753,84 @@ struct SearchView: SwiftUI.View {
     // 紧凑版账户胶囊（显示邮箱与登录/登出入口）
     private var compactAccountCapsule: some SwiftUI.View {
         HStack(spacing: 8) {
-            Image(systemName: appStore.selectedAccount == nil ? "person.circle" : "person.circle.fill")
-                .font(.system(size: 16))
-                .foregroundColor(appStore.selectedAccount == nil ? .secondary : themeManager.accentColor)
+            // Apple ID缓存状态指示器
+            HStack(spacing: 4) {
+                Image(systemName: appStore.selectedAccount == nil ? "person.circle" : "person.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(appStore.selectedAccount == nil ? .secondary : themeManager.accentColor)
+                
+                // 缓存状态指示器
+                if appStore.selectedAccount != nil {
+                    cacheStatusIndicator
+                }
+            }
+            
             if let acc = appStore.selectedAccount {
-                Text(acc.email)
-                    .font(.caption)
-                    .lineLimit(1)
+                // 显示当前账户信息
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(acc.email)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .foregroundColor(.primary)
+                    
+                    // 显示账户数量指示器
+                    if appStore.hasMultipleAccounts {
+                        Text("\(appStore.savedAccounts.count) 个账户")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
             } else {
                 Text("未登录")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+            
             Menu {
                 if appStore.selectedAccount == nil {
                     Button("登录") { showLoginSheet = true }
                 } else {
+                    // 多账户切换菜单
+                    if appStore.hasMultipleAccounts {
+                        ForEach(appStore.savedAccounts.indices, id: \.self) { index in
+                            let account = appStore.savedAccounts[index]
+                            Button(action: {
+                                appStore.switchToAccount(at: index)
+                            }) {
+                                HStack {
+                                    Text(account.email)
+                                    if index == appStore.selectedAccountIndex {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                        Divider()
+                    }
+                    
                     Button("账户详情") { showAccountMenu = true }
-                    Button("登出") { logoutAccount() }
+                    Button("新增：添加账户") { showLoginSheet = true }
+                    Button("新增：刷新一下，解决地区识别问题") { refreshRegionSettings() }
+                    
+                    // 缓存管理功能
+                    if appStore.selectedAccount != nil {
+                        Divider()
+                        if !sessionManager.isSessionValid {
+                            Button("🔧 修复连接问题") { 
+                                Task { await sessionManager.manualSessionCheck() }
+                            }
+                        }
+                        if sessionManager.isReconnecting {
+                            Button("⏹️ 停止重连") { 
+                                sessionManager.resetSessionState()
+                            }
+                        }
+                    }
+                    
+                    Button("登出", role: .destructive) { logoutAccount() }
                 }
             } label: {
-                Image(systemName: appStore.selectedAccount == nil ? "person.crop.circle.fill.badge.plus" : "rectangle.portrait.and.arrow.right")
+                Image(systemName: appStore.selectedAccount == nil ? "person.crop.circle.fill.badge.plus" : (appStore.hasMultipleAccounts ? "person.2.circle.fill" : "rectangle.portrait.and.arrow.right"))
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 6)
@@ -1215,6 +1280,9 @@ struct SearchView: SwiftUI.View {
     var searchResultsSection: some SwiftUI.View {
         VStack(spacing: 16) {
             if !searchResult.isEmpty {
+                // 当前账户指示器
+                currentAccountIndicator
+                
                 // 结果统计和视图切换器
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
@@ -1929,7 +1997,7 @@ struct SearchView: SwiftUI.View {
     }
     // 调用购买流程为账户绑定许可
     func purchaseFreeAppIfNeeded(item: iTunesSearchResult) async {
-        guard let account = AuthenticationManager.shared.loadSavedAccount() else {
+        guard let account = appStore.selectedAccount else {
             purchaseAlertText = "请先登录账号再获取应用"
             showPurchaseAlert = true
             return
@@ -1988,7 +2056,7 @@ struct SearchView: SwiftUI.View {
             do {
                 print("[SearchView] 开始加载应用版本: \(app.trackName)")
                 // 获取已保存的账户信息
-                guard let account = AuthenticationManager.shared.loadSavedAccount() else {
+                guard let account = appStore.selectedAccount else {
                     throw NSError(domain: "SearchView", code: -1, userInfo: [NSLocalizedDescriptionKey: "未登录账户，无法获取版本信息"])
                 }
                 // 并行：StoreClient 版本ID集合 + iTunes 版本历史详情
@@ -2035,6 +2103,9 @@ struct SearchView: SwiftUI.View {
                 
                 // 版本列表区域 - 直接显示，移除应用头部
                 VStack {
+                    // 当前账户指示器
+                    versionPickerAccountIndicator
+                    
                     if isLoadingVersions {
                         loadingVersionsView
                     } else if let error = versionError {
@@ -2211,6 +2282,10 @@ struct SearchView: SwiftUI.View {
             Button(action: {
                 Task {
                     if let app = selectedApp {
+                        // 显示账户确认提示
+                        if let account = appStore.selectedAccount {
+                            print("[SearchView] 用户确认下载，使用账户: \(account.email) (\(account.countryCode))")
+                        }
                         await downloadVersion(app: app, version: version)
                     }
                 }
@@ -2268,12 +2343,13 @@ struct SearchView: SwiftUI.View {
     @MainActor
     func downloadVersion(app: iTunesSearchResult, version: StoreAppVersion) async {
         showVersionPicker = false
-        guard appStore.selectedAccount != nil else {
+        guard let account = appStore.selectedAccount else {
             print("[SearchView] 错误：没有登录账户")
             return
         }
         let appId = app.trackId
         print("[SearchView] 开始下载应用: \(app.trackName) 版本: \(version.versionString)")
+        print("[SearchView] 使用账户: \(account.email) (\(account.countryCode))")
         // 使用UnifiedDownloadManager添加下载请求并开始下载
         let downloadId = UnifiedDownloadManager.shared.addDownload(
             bundleIdentifier: app.bundleId,
@@ -2296,11 +2372,8 @@ struct SearchView: SwiftUI.View {
     // MARK: - 账户菜单弹窗
     var accountMenuSheet: some SwiftUI.View {
         NavigationView {
-            if let account = appStore.selectedAccount {
-                AccountDetailView(account: account)
-                    .environmentObject(themeManager)
-                    .environmentObject(appStore)
-            } else {
+            if appStore.savedAccounts.isEmpty {
+                // 未登录状态
                 VStack(spacing: 24) {
                     Image(systemName: "person.circle")
                         .font(.system(size: 48))
@@ -2341,9 +2414,170 @@ struct SearchView: SwiftUI.View {
                         .font(.system(size: 16, weight: .medium))
                     }
                 }
+            } else {
+                // 多账户管理界面
+                multiAccountManagementView
             }
         }
         .navigationViewStyle(.stack)
+    }
+    
+    // MARK: - 多账户管理界面
+    var multiAccountManagementView: some SwiftUI.View {
+        VStack(spacing: 0) {
+            // 当前账户详情
+            if let currentAccount = appStore.selectedAccount {
+                VStack(spacing: 16) {
+                    Text("当前账户")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    AccountDetailView(account: currentAccount)
+                        .environmentObject(themeManager)
+                        .environmentObject(appStore)
+                }
+                .padding()
+            }
+            
+            // 所有账户列表
+            VStack(spacing: 16) {
+                HStack {
+                    Text("所有账户")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text("\(appStore.savedAccounts.count) 个账户")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(themeManager.accentColor.opacity(0.1))
+                        )
+                }
+                .padding(.horizontal)
+                
+                List {
+                    ForEach(appStore.savedAccounts.indices, id: \.self) { index in
+                        let account = appStore.savedAccounts[index]
+                        let isSelected = index == appStore.selectedAccountIndex
+                        
+                        HStack(spacing: 12) {
+                            // 账户头像
+                            Image(systemName: isSelected ? "person.circle.fill" : "person.circle")
+                                .font(.title2)
+                                .foregroundColor(isSelected ? themeManager.accentColor : .secondary)
+                            
+                            // 账户信息
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(account.email)
+                                    .font(.body)
+                                    .fontWeight(isSelected ? .semibold : .regular)
+                                    .foregroundColor(.primary)
+                                
+                                HStack(spacing: 8) {
+                                    Text(flag(country: account.countryCode))
+                                        .font(.caption)
+                                    Text(SearchView.countryCodeMapChinese[account.countryCode] ?? SearchView.countryCodeMap[account.countryCode] ?? account.countryCode)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    
+                                    if isSelected {
+                                        Text("当前")
+                                            .font(.caption2)
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(
+                                                Capsule()
+                                                    .fill(themeManager.accentColor)
+                                            )
+                                    }
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            // 操作按钮
+                            HStack(spacing: 8) {
+                                if !isSelected {
+                                    Button("切换") {
+                                        appStore.switchToAccount(at: index)
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(themeManager.accentColor)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        Capsule()
+                                            .fill(themeManager.accentColor.opacity(0.1))
+                                    )
+                                }
+                                
+                                Button("删除") {
+                                    appStore.deleteAccount(account)
+                                }
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.red.opacity(0.1))
+                                )
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .listStyle(PlainListStyle())
+            }
+            
+            // 添加账户按钮
+            VStack(spacing: 16) {
+                Button("添加新账户") {
+                    showAccountMenu = false
+                    showLoginSheet = true
+                }
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        colors: [themeManager.accentColor, themeManager.accentColor.opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(12)
+                .shadow(color: themeManager.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+            .padding()
+        }
+        .background(
+            LinearGradient(
+                colors: themeManager.selectedTheme == .dark ? 
+                    [Color(.systemBackground), Color(.secondarySystemBackground)] :
+                    [Color(.systemBackground), Color(.secondarySystemBackground).opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        )
+        .navigationTitle("账户管理")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("关闭") {
+                    showAccountMenu = false
+                }
+                .foregroundColor(themeManager.accentColor)
+                .font(.system(size: 16, weight: .medium))
+            }
+        }
     }
     
     // MARK: - 登录/登出功能
@@ -2354,6 +2588,252 @@ struct SearchView: SwiftUI.View {
         // 强制刷新UI
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             self.uiRefreshTrigger = UUID()
+        }
+    }
+    
+    // MARK: - 地区刷新功能
+    private func refreshRegionSettings() {
+        print("🔄 [地区刷新] 开始刷新地区设置")
+        
+        guard let account = appStore.selectedAccount else {
+            print("🔄 [地区刷新] 没有当前账户，重置为默认地区")
+            searchRegion = "US"
+            isUserSelectedRegion = false
+            return
+        }
+        
+        print("🔄 [地区刷新] 刷新账户地区: \(account.email) -> \(account.countryCode)")
+        
+        // 重置用户手动选择标志
+        isUserSelectedRegion = false
+        
+        // 使用账户的地区代码
+        searchRegion = account.countryCode
+        
+        // 强制刷新UI
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            self.uiRefreshTrigger = UUID()
+        }
+        
+        print("🔄 [地区刷新] 地区设置已刷新: \(searchRegion)")
+    }
+    
+    // MARK: - 当前账户指示器
+    private var currentAccountIndicator: some SwiftUI.View {
+        HStack(spacing: 12) {
+            // 账户图标
+            Image(systemName: "person.circle.fill")
+                .font(.system(size: 16))
+                .foregroundColor(themeManager.accentColor)
+            
+            // 账户信息
+            VStack(alignment: .leading, spacing: 2) {
+                if let account = appStore.selectedAccount {
+                    Text("当前使用账户")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    
+                    HStack(spacing: 8) {
+                        Text(account.email)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                        
+                        // 地区标签
+                        Text(flag(country: account.countryCode))
+                            .font(.caption)
+                        
+                        Text(SearchView.countryCodeMapChinese[account.countryCode] ?? account.countryCode)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
+                    Text("未登录账户")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            // 切换账户按钮
+            if appStore.hasMultipleAccounts {
+                Button("切换账户") {
+                    showAccountMenu = true
+                }
+                .font(.caption)
+                .foregroundColor(themeManager.accentColor)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(themeManager.accentColor.opacity(0.1))
+                )
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(.systemGray6))
+        )
+        .padding(.horizontal, 16)
+    }
+    
+    // MARK: - 版本选择器账户指示器
+    private var versionPickerAccountIndicator: some SwiftUI.View {
+        HStack(spacing: 12) {
+            // 账户图标
+            Image(systemName: "person.circle.fill")
+                .font(.system(size: 14))
+                .foregroundColor(themeManager.accentColor)
+            
+            // 账户信息
+            VStack(alignment: .leading, spacing: 2) {
+                if let account = appStore.selectedAccount {
+                    Text("使用账户")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    
+                    HStack(spacing: 6) {
+                        Text(account.email)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        // 地区标签
+                        Text(flag(country: account.countryCode))
+                            .font(.caption2)
+                        
+                        Text(SearchView.countryCodeMapChinese[account.countryCode] ?? account.countryCode)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
+                    Text("未登录账户")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            // 切换账户按钮
+            if appStore.hasMultipleAccounts {
+                Button("切换") {
+                    showVersionPicker = false
+                    showAccountMenu = true
+                }
+                .font(.caption2)
+                .foregroundColor(themeManager.accentColor)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule()
+                        .fill(themeManager.accentColor.opacity(0.1))
+                )
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray6).opacity(0.5))
+        )
+        .padding(.horizontal, 16)
+    }
+    
+    // MARK: - Apple ID缓存状态指示器
+    private var cacheStatusIndicator: some SwiftUI.View {
+        HStack(spacing: 6) {
+            // 状态图标
+            Image(systemName: cacheStatusIcon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white)
+            
+            // 状态文字
+            Text(cacheStatusText)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(cacheStatusGradient)
+                .shadow(color: cacheStatusColor.opacity(0.3), radius: 2, x: 0, y: 1)
+        )
+        .help(cacheStatusTooltip)
+        .scaleEffect(sessionManager.isReconnecting ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.3), value: sessionManager.isReconnecting)
+    }
+    
+    // 缓存状态图标（现代化设计）
+    private var cacheStatusIcon: String {
+        if !sessionManager.isSessionValid {
+            return "wifi.slash"
+        } else if sessionManager.isReconnecting {
+            return "arrow.clockwise"
+        } else {
+            return "checkmark.shield.fill"
+        }
+    }
+    
+    // 缓存状态颜色
+    private var cacheStatusColor: Color {
+        if !sessionManager.isSessionValid {
+            return Color(red: 0.9, green: 0.2, blue: 0.2) // 现代红色
+        } else if sessionManager.isReconnecting {
+            return Color(red: 0.95, green: 0.6, blue: 0.1) // 现代橙色
+        } else {
+            return Color(red: 0.2, green: 0.7, blue: 0.3) // 现代绿色
+        }
+    }
+    
+    // 缓存状态渐变背景
+    private var cacheStatusGradient: LinearGradient {
+        if !sessionManager.isSessionValid {
+            return LinearGradient(
+                colors: [Color(red: 0.9, green: 0.2, blue: 0.2), Color(red: 0.8, green: 0.1, blue: 0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else if sessionManager.isReconnecting {
+            return LinearGradient(
+                colors: [Color(red: 0.95, green: 0.6, blue: 0.1), Color(red: 0.9, green: 0.5, blue: 0.05)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            return LinearGradient(
+                colors: [Color(red: 0.2, green: 0.7, blue: 0.3), Color(red: 0.1, green: 0.6, blue: 0.2)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+    
+    // 缓存状态文字（更直观的描述）
+    private var cacheStatusText: String {
+        if !sessionManager.isSessionValid {
+            return "连接断开"
+        } else if sessionManager.isReconnecting {
+            return "重新连接中"
+        } else {
+            return "已连接"
+        }
+    }
+    
+    // 缓存状态提示（用户友好）
+    private var cacheStatusTooltip: String {
+        if !sessionManager.isSessionValid {
+            return "Apple ID连接已断开，请点击重新验证或重新登录"
+        } else if sessionManager.isReconnecting {
+            return "正在自动重新连接Apple ID，请稍候..."
+        } else {
+            return "Apple ID连接正常，可以正常搜索和下载应用"
         }
     }
 }

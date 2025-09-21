@@ -24,7 +24,12 @@ class TweakHandler {
 		let frameworksPath = _app.appendingPathComponent("Frameworks").appendingPathComponent("CydiaSubstrate.framework")
 
 		func addEllekit() async throws {
-		if let ellekitURL = Bundle.main.url(forResource: "ellekit", withExtension: "deb", subdirectory: "ElleKit") {
+		// 从外部的根目录加载 ellekit.deb 文件
+		let bundlePath = Bundle.main.bundlePath
+		let projectRoot = URL(fileURLWithPath: bundlePath).deletingLastPathComponent().deletingLastPathComponent()
+		let ellekitURL = projectRoot.appendingPathComponent("ellekit.deb")
+		
+		if FileManager.default.fileExists(atPath: ellekitURL.path) {
 			self._urls.insert(ellekitURL, at: 0)
 		} else {
 			Task { @MainActor in

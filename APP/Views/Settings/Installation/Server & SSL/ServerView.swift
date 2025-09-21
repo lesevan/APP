@@ -80,8 +80,8 @@ extension ServerView {
 }
 
 struct ServerView: View {
-	@AppStorage("Feather.ipFix") private var _ipFix: Bool = false
-	@AppStorage("Feather.serverMethod") private var _serverMethod: Int = 0
+	@AppStorage("Feather.ipFix") private var _ipFix: Bool = true
+	@AppStorage("Feather.serverMethod") private var _serverMethod: Int = 1
 	private let _serverMethods: [String] = ["完全本地", "半本地"]
 	
 	private let _dataService = NBFetchService()
@@ -97,13 +97,20 @@ struct ServerView: View {
 				}
 				Toggle("仅使用本地地址", systemImage: "lifepreserver", isOn: $_ipFix)
 					.disabled(_serverMethod != 1)
+			} footer: {
+				Text("半本地模式（推荐）：使用本地网络地址，更稳定可靠。\n完全本地模式：需要有效的SSL证书。")
 			}
 			
 			Section {
-				Button("更新SSL证书", systemImage: "arrow.down.doc") {
+				Button("刷新安装方法的SSL证书", systemImage: "arrow.down.doc") {
 					FR.downloadSSLCertificates(from: _serverPackUrl) { success in
-						if !success {
-							DispatchQueue.main.async {
+						DispatchQueue.main.async {
+							if success {
+								UIAlertController.showAlertWithOk(
+									title: "SSL证书",
+									message: "SSL证书刷新成功！"
+								)
+							} else {
 								UIAlertController.showAlertWithOk(
 									title: "SSL证书",
 									message: "下载失败，请检查网络连接后重试。"
@@ -112,6 +119,8 @@ struct ServerView: View {
 						}
 					}
 				}
+			} footer: {
+				Text("更新SSL证书以支持HTTPS安装。如果下载失败，请检查网络连接。")
 			}
 		}
 	}

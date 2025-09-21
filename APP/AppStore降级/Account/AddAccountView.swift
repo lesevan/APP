@@ -28,6 +28,7 @@ struct AddAccountView: View {
     @State private var errorMessage: String = ""
     @State private var isLoading: Bool = false
     @State private var showTwoFactorField: Bool = false
+    @FocusState private var isCodeFieldFocused: Bool
     var body: some View {
         NavigationView {
             ZStack {
@@ -102,10 +103,25 @@ struct AddAccountView: View {
                                     TextField("输入6位验证码", text: $code)
                                         .textFieldStyle(ModernTextFieldStyle())
                                         .keyboardType(.numberPad)
+                                        .focused($isCodeFieldFocused)
                                         .onChange(of: code) { newValue in
                                             // 限制输入长度为6位
                                             if newValue.count > 6 {
                                                 code = String(newValue.prefix(6))
+                                            }
+                                            
+                                            // 当输入6位验证码时自动缩回键盘并开始认证
+                                            if newValue.count == 6 {
+                                                // 延迟一点时间让用户看到输入完成
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                                    // 缩回键盘
+                                                    isCodeFieldFocused = false
+                                                    
+                                                    // 自动开始认证
+                                                    Task {
+                                                        await authenticate()
+                                                    }
+                                                }
                                             }
                                         }
                                     Text("请查看您的受信任设备或短信获取验证码")
@@ -179,6 +195,10 @@ struct AddAccountView: View {
             .navigationBarItems(leading: Button("取消") {
                 dismiss()
             }.foregroundColor(.primary))
+            .onTapGesture {
+                // 点击背景缩回键盘
+                isCodeFieldFocused = false
+            }
             .onAppear {
                 // 保持用户当前的主题设置，不强制重置
             }
@@ -198,6 +218,9 @@ struct AddAccountView: View {
         
         isLoading = true
         errorMessage = ""
+        
+        // 缩回键盘
+        isCodeFieldFocused = false
         
         do {
             print("🚀 [AddAccountView] 调用vm.loginAccount...")
@@ -227,8 +250,16 @@ struct AddAccountView: View {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showTwoFactorField = true
                         }
+                        // 延迟聚焦到验证码输入框
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            isCodeFieldFocused = true
+                        }
                     } else {
                         errorMessage = "验证码错误，请检查验证码是否正确"
+                        // 重新聚焦到验证码输入框
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isCodeFieldFocused = true
+                        }
                     }
                 case .lockedAccount:
                     errorMessage = "您的Apple ID已被锁定，请稍后再试或联系Apple支持"

@@ -322,11 +322,20 @@ class StoreRequest: @unchecked Sendable {
                     print("🔍 [DEBUG] 找到键 '\(key)': \(value)")
                 }
             }
-            print("📋 [账户信息] 开始解析accountInfo...")
-            let accountInfo = parseAccountInfo(from: plist)
-            print("🔐 [令牌解析] 搜索passwordToken...")
-            let passwordToken = plist["passwordToken"] as? String ?? ""
-            print("🔐 [令牌结果] passwordToken: '\(passwordToken.isEmpty ? "空" : "已获取(\(passwordToken.count)字符)")")
+        print("📋 [账户信息] 开始解析accountInfo...")
+        let accountInfo = parseAccountInfo(from: plist)
+        print("🔐 [令牌解析] 搜索passwordToken...")
+        let passwordToken = plist["passwordToken"] as? String ?? ""
+        print("🔐 [令牌结果] passwordToken: '\(passwordToken.isEmpty ? "空" : "已获取(\(passwordToken.count)字符)")")
+        
+        // 增强地区信息检测
+        print("🌍 [地区检测] 开始检测地区信息...")
+        if let accountInfo = accountInfo {
+            print("🌍 [地区检测] accountInfo.countryCode: '\(accountInfo.countryCode ?? "空")'")
+            print("🌍 [地区检测] accountInfo.storeFront: '\(accountInfo.storeFront ?? "空")'")
+        } else {
+            print("🌍 [地区检测] accountInfo为空，无法获取地区信息")
+        }
             print("🆔 [DSID解析] 在根级别搜索dsPersonId...")
             // 尝试多种可能的键名
             let dsPersonId = (plist["dsPersonId"] as? String) ?? 
@@ -381,7 +390,7 @@ class StoreRequest: @unchecked Sendable {
             } else if customerMessage == "MZFinance.BadLogin.Configurator_message" {
                 throw StoreError.codeRequired
             } else if customerMessage.contains("AMD-Action") {
-                // AMD安全挑战 - 可能需要特殊处理，但目前按成功处理
+                // AMD安全挑战
                 print("⚠️ [AMD挑战] 检测到AMD安全挑战，尝试继续处理...")
                 // 创建一个空的成功响应，让调用者处理
                 let emptyResponse = StoreAuthResponse(
@@ -431,8 +440,14 @@ class StoreRequest: @unchecked Sendable {
                         (accountInfo["DSID"] as? String) ?? 
                         (accountInfo["directoryServicesIdentifier"] as? String) ?? ""
         print("🔍 [DEBUG] parseAccountInfo: 最终获取的 dsPersonId: '\(dsPersonId)')")
-        let countryCode = accountInfo["countryCode"] as? String
-        let storeFront = accountInfo["storeFront"] as? String
+        
+        // 增强地区信息检测
+        let countryCode = detectCountryCodeFromAccountInfo(accountInfo)
+        let storeFront = detectStoreFrontFromAccountInfo(accountInfo)
+        
+        print("🌍 [地区解析] 检测到的countryCode: '\(countryCode ?? "空")'")
+        print("🏪 [商店解析] 检测到的storeFront: '\(storeFront ?? "空")'")
+        
         return StoreAuthResponse.AccountInfo(
             appleId: appleId,
             address: StoreAuthResponse.AccountInfo.Address(
@@ -443,6 +458,70 @@ class StoreRequest: @unchecked Sendable {
             countryCode: countryCode,
             storeFront: storeFront
         )
+    }
+    
+    /// 从账户信息中检测地区代码
+    private func detectCountryCodeFromAccountInfo(_ accountInfo: [String: Any]) -> String? {
+        // 1. 直接获取countryCode
+        if let countryCode = accountInfo["countryCode"] as? String, !countryCode.isEmpty {
+            print("🌍 [地区检测] 直接获取countryCode: \(countryCode)")
+            return countryCode
+        }
+        
+        // 2. 从storeFront推断
+        if let storeFront = accountInfo["storeFront"] as? String, !storeFront.isEmpty {
+            let inferredCountryCode = inferCountryCodeFromStoreFront(storeFront)
+            if inferredCountryCode != "US" {
+                print("🌍 [地区检测] 从storeFront推断countryCode: \(inferredCountryCode)")
+                return inferredCountryCode
+            }
+        }
+        
+        // 3. 检查其他可能的地区相关字段
+        let regionFields = ["region", "country", "locale", "territory", "market"]
+        for field in regionFields {
+            if let value = accountInfo[field] as? String, !value.isEmpty {
+                print("🌍 [地区检测] 从\(field)字段获取: \(value)")
+                return value.uppercased()
+            }
+        }
+        
+        return nil
+    }
+    
+    /// 从账户信息中检测StoreFront
+    private func detectStoreFrontFromAccountInfo(_ accountInfo: [String: Any]) -> String? {
+        // 1. 直接获取storeFront
+        if let storeFront = accountInfo["storeFront"] as? String, !storeFront.isEmpty {
+            print("🏪 [商店检测] 直接获取storeFront: \(storeFront)")
+            return storeFront
+        }
+        
+        // 2. 检查其他可能的商店相关字段
+        let storeFields = ["storefront", "storeFront", "store_front", "marketId", "market_id"]
+        for field in storeFields {
+            if let value = accountInfo[field] as? String, !value.isEmpty {
+                print("🏪 [商店检测] 从\(field)字段获取: \(value)")
+                return value
+            }
+        }
+        
+        return nil
+    }
+    
+    /// 从StoreFront推断地区代码
+    private func inferCountryCodeFromStoreFront(_ storeFront: String) -> String {
+        // 提取StoreFront的数字部分
+        let storeFrontCode = storeFront.components(separatedBy: "-").first ?? storeFront
+        
+        // 反向查找地区代码映射
+        for (countryCode, code) in Apple.storeFrontCodeMap {
+            if code == storeFrontCode {
+                return countryCode
+            }
+        }
+        
+        return "US" // 默认值
     }
     /// Parse download response
     private func parseDownloadResponse(

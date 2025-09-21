@@ -33,6 +33,13 @@ class AuthenticationManager: @unchecked Sendable {
         let lastName = response.accountInfo.address.lastName
         let name = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
         let finalName = name.isEmpty ? email : name
+        // 智能地区代码检测
+        let detectedCountryCode = detectCountryCode(from: response, email: email)
+        let detectedStoreFront = detectStoreFront(from: response, countryCode: detectedCountryCode)
+        
+        print("🌍 [地区检测] 检测到的地区代码: \(detectedCountryCode)")
+        print("🏪 [商店检测] 检测到的StoreFront: \(detectedStoreFront)")
+        
         // 使用完整的Account初始化器，确保提供所有必需的参数
         let account = Account(
             name: finalName,
@@ -43,11 +50,11 @@ class AuthenticationManager: @unchecked Sendable {
             directoryServicesIdentifier: response.dsPersonId,
             dsPersonId: response.dsPersonId,
             cookies: cookieStrings,
-            countryCode: response.accountInfo.countryCode ?? "US",
+            countryCode: detectedCountryCode,
             storeResponse: Account.StoreResponse(
                 directoryServicesIdentifier: response.dsPersonId,
                 passwordToken: response.passwordToken,
-                storeFront: response.accountInfo.storeFront ?? "143441-1,29"
+                storeFront: detectedStoreFront
             )
         )
         // 保存到钥匙串
@@ -63,11 +70,41 @@ class AuthenticationManager: @unchecked Sendable {
     func loadSavedAccount() -> Account? {
         return loadAccountFromKeychain()
     }
+    
+    /// 从钥匙串加载所有保存的账户
+    /// - 返回: 所有已保存的账户列表
+    func loadAllSavedAccounts() -> [Account] {
+        // 首先尝试加载新的多账户格式
+        let newFormatAccounts = loadAllAccountsFromKeychain()
+        if !newFormatAccounts.isEmpty {
+            print("🔐 [AuthenticationManager] 加载了 \(newFormatAccounts.count) 个账户（新格式）")
+            return newFormatAccounts
+        }
+        
+        // 如果新格式没有数据，尝试加载旧的单账户格式
+        if let oldFormatAccount = loadAccountFromKeychain() {
+            print("🔐 [AuthenticationManager] 加载了1个账户（旧格式），转换为新格式")
+            // 将旧格式账户转换为新格式并保存
+            let accounts = [oldFormatAccount]
+            try? saveAllAccountsToKeychain(accounts)
+            return accounts
+        }
+        
+        print("🔐 [AuthenticationManager] 没有找到任何保存的账户")
+        return []
+    }
     /// 将账户保存到钥匙串
     /// - 参数 account: 要保存的账户
     /// - 抛出: 如果保存失败则抛出错误
     func saveAccount(_ account: Account) throws {
         try saveAccountToKeychain(account)
+    }
+    
+    /// 将所有账户保存到钥匙串
+    /// - 参数 accounts: 要保存的账户列表
+    /// - 抛出: 如果保存失败则抛出错误
+    func saveAllAccounts(_ accounts: [Account]) throws {
+        try saveAllAccountsToKeychain(accounts)
     }
     /// 从钥匙串删除已保存的账户
     /// - 返回: 如果删除成功则返回true
@@ -203,6 +240,144 @@ class AuthenticationManager: @unchecked Sendable {
             }
         }
     }
+    // MARK: - 地区检测辅助方法
+    
+    /// 智能检测地区代码
+    private func detectCountryCode(from response: StoreAuthResponse, email: String) -> String {
+        print("🌍 [地区检测] 开始检测地区代码，邮箱: \(email)")
+        
+        // 1. 优先使用服务器返回的地区代码
+        if let serverCountryCode = response.accountInfo.countryCode, !serverCountryCode.isEmpty {
+            print("🌍 [地区检测] 使用服务器返回的地区代码: \(serverCountryCode)")
+            return serverCountryCode
+        }
+        
+        // 2. 从StoreFront中推断地区代码
+        if let storeFront = response.accountInfo.storeFront, !storeFront.isEmpty {
+            let inferredCountryCode = inferCountryCodeFromStoreFront(storeFront)
+            print("🌍 [地区检测] 从StoreFront推断地区代码: \(inferredCountryCode) (StoreFront: \(storeFront))")
+            return inferredCountryCode
+        }
+        
+        // 3. 从Cookie中检测地区信息
+        let cookieCountryCode = detectCountryCodeFromCookies()
+        if cookieCountryCode != "US" {
+            print("🌍 [地区检测] 从Cookie检测地区代码: \(cookieCountryCode)")
+            return cookieCountryCode
+        }
+        
+        // 4. 从邮箱域名推断地区（作为最后手段，但要谨慎）
+        let emailCountryCode = inferCountryCodeFromEmail(email)
+        print("🌍 [地区检测] 从邮箱推断地区代码: \(emailCountryCode)")
+        
+        // 5. 如果所有方法都失败，默认返回US（美区）
+        print("🌍 [地区检测] 使用默认地区代码: US")
+        return "US"
+    }
+    
+    /// 从StoreFront推断地区代码
+    private func inferCountryCodeFromStoreFront(_ storeFront: String) -> String {
+        // 提取StoreFront的数字部分
+        let storeFrontCode = storeFront.components(separatedBy: "-").first ?? storeFront
+        
+        // 反向查找地区代码映射
+        for (countryCode, code) in Apple.storeFrontCodeMap {
+            if code == storeFrontCode {
+                return countryCode
+            }
+        }
+        
+        return "US" // 默认值
+    }
+    
+    /// 从Cookie中检测地区信息
+    private func detectCountryCodeFromCookies() -> String {
+        guard let cookies = HTTPCookieStorage.shared.cookies else { return "US" }
+        
+        for cookie in cookies {
+            if cookie.domain.contains("apple.com") {
+                // 检查Cookie名称和值中是否包含地区信息
+                let cookieString = "\(cookie.name)=\(cookie.value)"
+                
+                // 查找常见的地区标识符
+                if cookieString.contains("storefront") || cookieString.contains("storeFront") {
+                    // 尝试从Cookie值中提取StoreFront代码
+                    let components = cookieString.components(separatedBy: "=")
+                    if components.count > 1 {
+                        let value = components[1]
+                        let storeFrontCode = value.components(separatedBy: "-").first ?? value
+                        return inferCountryCodeFromStoreFront(storeFrontCode)
+                    }
+                }
+            }
+        }
+        
+        return "US"
+    }
+    
+    /// 从邮箱域名推断地区代码（保守策略）
+    private func inferCountryCodeFromEmail(_ email: String) -> String {
+        let domain = email.components(separatedBy: "@").last?.lowercased() ?? ""
+        print("🌍 [邮箱检测] 分析邮箱域名: \(domain)")
+        
+        // 只对明确的地区域名进行推断，避免误判
+        // 检查国家代码顶级域名（更可靠）
+        if domain.hasSuffix(".cn") {
+            print("🌍 [邮箱检测] 检测到.cn域名，推断为中国区")
+            return "CN"
+        } else if domain.hasSuffix(".jp") {
+            print("🌍 [邮箱检测] 检测到.jp域名，推断为日本区")
+            return "JP"
+        } else if domain.hasSuffix(".kr") {
+            print("🌍 [邮箱检测] 检测到.kr域名，推断为韩国区")
+            return "KR"
+        } else if domain.hasSuffix(".hk") {
+            print("🌍 [邮箱检测] 检测到.hk域名，推断为香港区")
+            return "HK"
+        } else if domain.hasSuffix(".tw") {
+            print("🌍 [邮箱检测] 检测到.tw域名，推断为台湾区")
+            return "TW"
+        } else if domain.hasSuffix(".sg") {
+            print("🌍 [邮箱检测] 检测到.sg域名，推断为新加坡区")
+            return "SG"
+        } else if domain.hasSuffix(".au") {
+            print("🌍 [邮箱检测] 检测到.au域名，推断为澳大利亚区")
+            return "AU"
+        } else if domain.hasSuffix(".ca") {
+            print("🌍 [邮箱检测] 检测到.ca域名，推断为加拿大区")
+            return "CA"
+        } else if domain.hasSuffix(".uk") {
+            print("🌍 [邮箱检测] 检测到.uk域名，推断为英国区")
+            return "GB"
+        } else if domain.hasSuffix(".de") {
+            print("🌍 [邮箱检测] 检测到.de域名，推断为德国区")
+            return "DE"
+        } else if domain.hasSuffix(".fr") {
+            print("🌍 [邮箱检测] 检测到.fr域名，推断为法国区")
+            return "FR"
+        }
+        
+        // 对于其他域名（包括gmail.com, yahoo.com等），默认返回US
+        // 因为用户可能使用任何邮箱注册美区Apple ID
+        print("🌍 [邮箱检测] 未检测到明确的地区域名，默认返回美区")
+        return "US"
+    }
+    
+    /// 智能检测StoreFront
+    private func detectStoreFront(from response: StoreAuthResponse, countryCode: String) -> String {
+        // 1. 优先使用服务器返回的StoreFront
+        if let serverStoreFront = response.accountInfo.storeFront, !serverStoreFront.isEmpty {
+            print("🏪 [商店检测] 使用服务器返回的StoreFront: \(serverStoreFront)")
+            return serverStoreFront
+        }
+        
+        // 2. 根据地区代码生成StoreFront
+        let storeFrontCode = Apple.storeFrontCodeMap[countryCode] ?? "143441"
+        let generatedStoreFront = "\(storeFrontCode)-1,29"
+        print("🏪 [商店检测] 根据地区代码生成StoreFront: \(generatedStoreFront)")
+        return generatedStoreFront
+    }
+    
     // MARK: - 钥匙串管理
     /// 将账户保存到钥匙串
     private func saveAccountToKeychain(_ account: Account) throws {
@@ -249,6 +424,105 @@ class AuthenticationManager: @unchecked Sendable {
         ]
         let status = SecItemDelete(query as CFDictionary)
         return status == errSecSuccess
+    }
+    
+    /// 从钥匙串加载所有账户
+    private func loadAllAccountsFromKeychain() -> [Account] {
+        // 尝试加载新格式的多账户数据
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: self.keychainService,
+            kSecAttrAccount as String: self.keychainAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var dataTypeRef: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &dataTypeRef)
+        
+        guard status == errSecSuccess,
+              let data = dataTypeRef as? Data else {
+            print("🔐 [AuthenticationManager] 没有找到新格式的账户数据")
+            return []
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            // 尝试解码为账户数组
+            if let accounts = try? decoder.decode([Account].self, from: data) {
+                print("🔐 [AuthenticationManager] 成功解码账户数组，包含 \(accounts.count) 个账户")
+                return accounts
+            }
+            // 如果失败，尝试解码为单个账户
+            else if let account = try? decoder.decode(Account.self, from: data) {
+                print("🔐 [AuthenticationManager] 成功解码单个账户，转换为数组")
+                return [account]
+            }
+            else {
+                print("🔐 [AuthenticationManager] 无法解码账户数据")
+                return []
+            }
+        } catch {
+            print("🔐 [AuthenticationManager] 解码账户数据失败: \(error)")
+            return []
+        }
+    }
+    
+    /// 将所有账户保存到钥匙串
+    private func saveAllAccountsToKeychain(_ accounts: [Account]) throws {
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(accounts)
+        
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: self.keychainService,
+            kSecAttrAccount as String: self.keychainAccount,
+            kSecValueData as String: data
+        ]
+        
+        // 删除现有项目
+        SecItemDelete(query as CFDictionary)
+        
+        // 添加新项目
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            throw StoreError.keychainError
+        }
+    }
+    
+    // MARK: - 测试和调试方法
+    
+    /// 测试地区检测功能（仅用于调试）
+    func testRegionDetection(email: String) -> String {
+        print("🧪 [测试] 开始测试地区检测功能")
+        print("📧 [测试] 测试邮箱: \(email)")
+        
+        let detectedCountryCode = inferCountryCodeFromEmail(email)
+        print("🧪 [测试] 检测结果: \(detectedCountryCode)")
+        
+        return detectedCountryCode
+    }
+    
+    /// 调试地区检测问题
+    func debugRegionDetection(account: Account) {
+        print("🔍 [调试] 开始调试地区检测问题")
+        print("🔍 [调试] 账户邮箱: \(account.email)")
+        print("🔍 [调试] 账户地区代码: \(account.countryCode)")
+        print("🔍 [调试] 账户StoreFront: \(account.storeResponse.storeFront)")
+        
+        // 测试邮箱域名推断
+        let emailInferred = inferCountryCodeFromEmail(account.email)
+        print("🔍 [调试] 邮箱推断结果: \(emailInferred)")
+        
+        // 测试StoreFront推断
+        let storeFrontInferred = inferCountryCodeFromStoreFront(account.storeResponse.storeFront)
+        print("🔍 [调试] StoreFront推断结果: \(storeFrontInferred)")
+        
+        // 检查Cookie
+        let cookieInferred = detectCountryCodeFromCookies()
+        print("🔍 [调试] Cookie推断结果: \(cookieInferred)")
+        
+        print("🔍 [调试] 调试完成")
     }
 }
 // MARK: - 账户模型
