@@ -99,9 +99,16 @@ final class iOSCompatibility: @unchecked Sendable {
                 // IPA文件实际上是ZIP文件，其文件头通常是PK (504b)
                 return hexString.hasPrefix("504b0304") || hexString.hasPrefix("504b0506") || hexString.hasPrefix("504b0708")
             case "dylib", "deb":
-                // Dylib和Deb文件通常是Mach-O格式，文件头是FEEDFACE或FEEDFACF (arm64)
+                // Dylib和Deb文件通常是Mach-O格式，文件头包括：
+                // FEEDFACE (armv7), FEEDFACF (arm64), CFFAEDFE (arm64), CAFEBABE (universal)
                 // Deb文件也是ar归档，文件头是!ar (21637268)
-                return hexString.hasPrefix("feedface") || hexString.hasPrefix("feedfacf") || hexString.hasPrefix("213c617263683e") // !<arch>
+                let isValidMachO = hexString.hasPrefix("feedface") || hexString.hasPrefix("feedfacf") || 
+                                  hexString.hasPrefix("cffaedfe") || hexString.hasPrefix("cafebabe")
+                let isValidAr = hexString.hasPrefix("213c617263683e") // !<arch>
+                let isValid = isValidMachO || isValidAr
+                
+                logger.info("文件 \(url.lastPathComponent) 验证结果: Mach-O=\(isValidMachO), AR=\(isValidAr), 总体=\(isValid)")
+                return isValid
             case "p12":
                 // P12文件是PKCS#12格式，通常以3082开头
                 return hexString.hasPrefix("3082")

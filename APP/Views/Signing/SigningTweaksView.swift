@@ -39,12 +39,22 @@ struct SigningTweaksView: View {
 						_file(tweak: tweak)
 					}
 				} else {
-					Text("No files chosen.")
+					Text("未选择任何文件")
 						.font(.footnote)
 						.foregroundColor(.secondary)
 				}
 			} header: {
-				Text("Tweaks")
+				Text("动态库文件")
+			} footer: {
+				if !options.injectionFiles.isEmpty {
+					Text("已选择 \(options.injectionFiles.count) 个文件")
+						.font(.caption)
+						.foregroundColor(.secondary)
+				} else {
+					Text("点击右上角的\"添加\"按钮来选择 .dylib 或 .deb 文件")
+						.font(.caption)
+						.foregroundColor(.secondary)
+				}
 			}
 		}
 		.navigationTitle("Tweaks")
@@ -60,20 +70,29 @@ struct SigningTweaksView: View {
 		.sheet(isPresented: $_isAddingPresenting) {
 			FileImporterRepresentableView(
 				allowedContentTypes: [.dylib, .deb],
+				allowsMultipleSelection: true,
 				onDocumentsPicked: { urls in
 					DispatchQueue.main.async { _isAddingPresenting = false }
+					
+					guard !urls.isEmpty else { return }
+					
 					for url in urls {
-						// 使用兼容性工具验证文件类型
-						guard iOSCompatibility.shared.validateFileType(url, allowedTypes: ["dylib", "deb"]) else { 
-							print("不支持的文件类型: \(url.pathExtension)")
-							continue 
+						// 检查文件是否已经存在
+						let fileName = url.lastPathComponent
+						let alreadyExists = options.injectionFiles.contains { existingURL in
+							existingURL.lastPathComponent == fileName
 						}
 						
+						guard !alreadyExists else {
+							print("文件已存在，跳过: \(fileName)")
+							continue
+						}
+						
+						// 移动并存储文件
 						FileManager.default.moveAndStore(url, with: "FeatherTweak") { storedURL in
 							DispatchQueue.main.async {
-								if !options.injectionFiles.contains(storedURL) {
-									options.injectionFiles.append(storedURL)
-								}
+								options.injectionFiles.append(storedURL)
+								print("成功添加动态库文件: \(storedURL.lastPathComponent)")
 							}
 						}
 					}
@@ -109,7 +128,7 @@ extension SigningTweaksView {
 				}
 			}
 		} label: {
-			Label("Delete", systemImage: "trash")
+			Label("删除", systemImage: "trash")
 		}
 	}
 }

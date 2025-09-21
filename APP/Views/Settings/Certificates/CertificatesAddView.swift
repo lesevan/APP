@@ -20,8 +20,9 @@ struct FileImporterRepresentableView: UIViewControllerRepresentable {
     }
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = iOSCompatibility.shared.createDocumentPicker(for: allowedContentTypes, allowsMultipleSelection: allowsMultipleSelection)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes, asCopy: true)
         picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = allowsMultipleSelection
         return picker
     }
     
@@ -32,20 +33,17 @@ struct FileImporterRepresentableView: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let onDocumentsPicked: ([URL]) -> Void
-        private let logger = Logger(subsystem: "com.feather.fileimporter", category: "FileImporter")
+        var onDocumentsPicked: ([URL]) -> Void
         
         init(onDocumentsPicked: @escaping ([URL]) -> Void) {
             self.onDocumentsPicked = onDocumentsPicked
         }
         
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            logger.info("选择了 \(urls.count) 个文件")
             onDocumentsPicked(urls)
         }
         
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-            logger.info("用户取消了文件选择")
             onDocumentsPicked([])
         }
     }
