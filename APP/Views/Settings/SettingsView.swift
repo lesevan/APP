@@ -2,20 +2,14 @@ import SwiftUI
 import UIKit
 
 struct SettingsView: View {
-    // MARK: - Constants
-    private let githubUrl = "https://baidu.com/"
-    
     // MARK: - State Properties
     @State private var currentIcon = UIApplication.shared.alternateIconName
     @StateObject private var optionsManager = OptionsManager.shared
-    @State private var showingFeedback = false
     
     // MARK: - Body
     var body: some View {
         NavigationView {
             Form {
-                feedbackSection
-                
                 appearanceSection
                 
                 advancedFeaturesSection
@@ -25,28 +19,12 @@ struct SettingsView: View {
                 aboutSection
             }
             .navigationTitle("设置")
-            .sheet(isPresented: $showingFeedback) {
-                FeedbackView()
-            }
         }
     }
 }
 
 // MARK: - Section Views
 extension SettingsView {
-    
-    private var feedbackSection: some View {
-        Section {
-            Button(action: {
-                showingFeedback = true
-            }) {
-                Label("反馈与支持", systemImage: "bubble.left.and.bubble.right")
-            }
-            .foregroundColor(.primary)
-        } footer: {
-            Text("遇到问题或有建议？告诉我们！")
-        }
-    }
     
     private var appearanceSection: some View {
         Section(header: Text("外观")) {
@@ -115,11 +93,6 @@ extension SettingsView {
                 Text(appVersion)
                     .foregroundColor(.secondary)
             }
-            
-            Link(destination: URL(string: githubUrl)!) {
-                Label("GitHub 仓库", systemImage: "link")
-            }
-            .foregroundColor(.primary)
         }
     }
 }
@@ -130,42 +103,6 @@ extension SettingsView {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
-    }
-}
-
-// MARK: - Supporting Views
-struct FeedbackView: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section {
-                    TextField("主题", text: .constant(""))
-                    TextEditor(text: .constant(""))
-                        .frame(height: 150)
-                } header: {
-                    Text("反馈内容")
-                }
-                
-                Section {
-                    Button("提交反馈") {
-                        // 提交反馈逻辑
-                        dismiss()
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .navigationTitle("反馈与支持")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("取消") {
-                        dismiss()
-                    }
-                }
-            }
-        }
     }
 }
 
